@@ -640,10 +640,38 @@ function load(){
 /* ════════════════════════════════════════════════════════════
    3. NFC
    A card's or sticker's factory serial number IS its identity.
-   Nothing is ever written to a tag, so a tag cannot be forged
+   The bank never writes to a tag, so a tag cannot be forged
    into money and a half-finished tap cannot corrupt anything.
+   A player card may carry one text record, written once in
+   NFC Tools, naming its token: "token:top-hat". The bank reads
+   it and shows the token beside the player's name.
    ════════════════════════════════════════════════════════════ */
 const nfcSupported = typeof NDEFReader !== 'undefined';
+
+const TOKEN_ICONS = {
+  'top-hat':'🎩', 'hat':'🎩', 'race-car':'🏎️', 'car':'🚗', 'dog':'🐕', 'scottie-dog':'🐕',
+  'cat':'🐈', 'ship':'🚢', 'battleship':'🚢', 'boot':'👢', 'thimble':'🧵', 'iron':'🧺',
+  'wheelbarrow':'🛒', 'penguin':'🐧', 't-rex':'🦖', 'dinosaur':'🦖', 'duck':'🦆',
+  'rubber-duck':'🦆', 'horse':'🐎', 'cannon':'💣', 'money-bag':'💰', 'train':'🚂'
+};
+function tokenFromMessage(msg){
+  try {
+    for (const r of (msg && msg.records) || []){
+      if (r.recordType !== 'text') continue;
+      const txt = new TextDecoder(r.encoding || 'utf-8').decode(r.data).trim().toLowerCase();
+      const m = txt.match(/^token:\s*([a-z0-9][a-z0-9-]{0,23})$/);
+      if (m) return m[1];
+    }
+  } catch(e){ /* unreadable record: ignore, the serial still works */ }
+  return null;
+}
+function tokenLabel(tok){
+  if (!tok) return '';
+  const words = tok.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return (TOKEN_ICONS[tok] ? TOKEN_ICONS[tok] + ' ' : '') + words;
+}
+function displayName(p){ return p.token ? (TOKEN_ICONS[p.token] ? TOKEN_ICONS[p.token] + ' ' : '') + p.name : p.name; }
+let lastToken = null;    // token read on the most recent tap
 let reader = null;
 let scanning = false;
 
@@ -651,7 +679,7 @@ async function startScanning(){
   if (!nfcSupported || scanning) return;
   try {
     reader = new NDEFReader();
-    reader.onreading = ev => handleTap(ev.serialNumber);
+    reader.onreading = ev => handleTap(ev.serialNumber, tokenFromMessage(ev.message));
     reader.onreadingerror = () => toast('Tag unreadable. Format it once in NFC Tools, then try again.');
     await reader.scan();
     scanning = true;
@@ -673,11 +701,14 @@ function resolve(serial){
   return null;
 }
 
-function handleTap(serial){
+function handleTap(serial, token = null){
   if (!serial) return;
   const now = Date.now();
   if (serial === lastTap.serial && now - lastTap.at < 1200) return;   // one tap, one read
   lastTap = { serial, at: now };
+  lastToken = token;
+  const known = findPlayer(serial);
+  if (known && token && known.token !== token){ known.token = token; save(); renderAll(); }
   beep(); buzz();
   if (onTap) onTap(serial);
   else toast('Finish this screen first');
@@ -736,7 +767,8 @@ const NAV_FOR = { idle:'idle', ledger:'ledger', setup:'setup', standings:'setup'
 let current = 'setup';
 let activePlayer = null;     // whose turn at the terminal
 let activeDeed = null;       // index of the deed on screen
-let pendingCard = null;      // serial waiting to be named
+let pendingCard = null;
+let pendingToken = null;   // token record read from the card being enrolled      // serial waiting to be named
 
 function show(name, nav){
   current = name;
@@ -775,8 +807,8 @@ function renderRoster(el, opts = {}){
     li.innerHTML = chip(p.color) +
       '<span class="who"><b></b><small></small></span>' +
       '<span class="bal figure" data-broke="' + (bal < 0) + '">' + money(bal) + '</span>';
-    li.querySelector('b').textContent = p.name;
-    li.querySelector('small').textContent = opts.ids ? p.id.slice(0, 20) : (n + (n === 1 ? ' deed' : ' deeds'));
+    li.querySelector('b').textContent = displayName(p);
+    li.querySelector('small').textContent = opts.ids ? (p.token ? tokenLabel(p.token) + ' · ' : '') + p.id.slice(0, 20) : (n + (n === 1 ? ' deed' : ' deeds'));
     if (opts.onClick){
       li.classList.add('clickable');
       li.tabIndex = 0;
@@ -819,7 +851,7 @@ function renderLedger(){
 function renderPlayer(){
   if (!activePlayer) return;
   const bal = balanceOf(activePlayer.id);
-  $('pName').textContent = activePlayer.name;
+  $('pName').textContent = displayName(activePlayer);
   $('pBal').textContent = money(bal);
   $('pBal').dataset.broke = String(bal < 0);
   const n = deedsOf(activePlayer.id).length;
@@ -1276,7 +1308,10 @@ function boot(){
     if (findPlayer(serial)) { toast(findPlayer(serial).name + ' is already enrolled'); return; }
     if (serial in state.deeds) { toast('That sticker is ' + PROPERTIES[state.deeds[serial]].n); return; }
     pendingCard = serial;
-    $('newCardId').textContent = serial;
+    pendingToken = lastToken;
+    const taken = pendingToken && state.players.find(p => p.token === pendingToken);
+    if (taken) toast(tokenLabel(pendingToken) + ' is already ' + taken.name + '’s token');
+    $('newCardId').textContent = pendingToken ? tokenLabel(pendingToken) + ' card' : serial;
     $('nameInput').value = '';
     const used = new Set(state.players.map(p => p.color));
     const free = TOKEN_COLORS.findIndex(c => !used.has(c));
@@ -1299,8 +1334,10 @@ function boot(){
     if (!name){ toast('Give the player a name'); return; }
     const chosen = [...sw.children].find(b => b.getAttribute('aria-pressed') === 'true');
     const color = TOKEN_COLORS[[...sw.children].indexOf(chosen)] || TOKEN_COLORS[0];
-    state.players.push({ id: pendingCard, name, color });
-    pendingCard = null; save();
+    const player = { id: pendingCard, name, color };
+    if (pendingToken) player.token = pendingToken;
+    state.players.push(player);
+    pendingCard = null; pendingToken = null; save();
     toast(name + ' enrolled. Tap the next card.');
     show('setup');
     onTap = enrollTap;        // keep enrolling card after card
