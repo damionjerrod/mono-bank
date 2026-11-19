@@ -299,6 +299,7 @@ footer button[data-active="true"]{color:var(--brass)}
         <button class="btn" id="standingsBtn">Standings<small>Net worth, best first</small></button>
         <button class="btn" id="newGameBtn">New game<small>Keeps players and deeds</small></button>
       </div>
+      <button class="btn" data-tone="danger" id="collapseBtn">Bank Collapse<small>Wipes everything: players, deed stickers, the whole game</small></button>
     </div>
   </section>
 
@@ -1320,6 +1321,15 @@ function boot(){
     if (state.ledger.length && !confirm('Start a new game? Every balance and deed goes back to the start.')) return;
     state.ledger = []; state.open = false; invalidate(); save();
     toast('New game. Everyone is back to $1,500.');
+    renderAll();
+  };
+  $('collapseBtn').onclick = () => {
+    if (!confirm('BANK COLLAPSE\n\nThe bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.')) return;
+    const typed = prompt('To confirm, type COLLAPSE');
+    if ((typed || '').trim().toUpperCase() !== 'COLLAPSE'){ toast('Crisis averted. Nothing was wiped.'); return; }
+    state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
+    invalidate(); save();
+    toast('The bank has collapsed. Enroll cards to start a new economy.');
     renderAll();
   };
   $('standingsBtn').onclick = () => show('standings');
