@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E1A14">
+<title>Bank Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS
+   Palette is the teller cage: dark green-black lacquer, brass
+   fittings, cream ledger paper. Property colours are the only
+   saturated hues, and they come from the board itself.
+   ============================================================ */
+:root{
+  --ink:#0E1A14;
+  --panel:#17251E;
+  --panel-hi:#1E3129;
+  --line:#2C463A;
+  --cream:#EDE7D9;
+  --cream-dim:#9BAA9F;
+  --brass:#C9A24B;
+  --brass-dim:#7A6330;
+  --money:#3E9B6D;
+  --debt:#C4514F;
+
+  --display:'Josefin Sans',ui-rounded,system-ui,sans-serif;
+  --body:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --figure:'IBM Plex Mono',ui-monospace,monospace;
+
+  --r:14px;
+  --pad:16px;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  background:var(--ink);
+  color:var(--cream);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.45;
+  overscroll-behavior:none;
+  display:flex;
+  flex-direction:column;
+  min-height:100dvh;
+}
+
+/* ---------- chrome ---------- */
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 12px) var(--pad) 12px;
+  border-bottom:1px solid var(--line);
+}
+.mark{
+  font-family:var(--display);font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;
+  font-size:13px;color:var(--brass);
+  flex:1;
+}
+.lamp{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--cream-dim);flex:none;
+}
+.lamp[data-on="true"]{background:var(--money);box-shadow:0 0 10px var(--money)}
+.lamp-label{font-size:11px;color:var(--cream-dim);letter-spacing:.08em;text-transform:uppercase}
+
+main{flex:1;padding:var(--pad);display:flex;flex-direction:column;gap:var(--pad)}
+.view{display:none;flex-direction:column;gap:var(--pad);flex:1}
+.view[data-active="true"]{display:flex}
+
+/* ---------- type ---------- */
+h1,h2{font-family:var(--display);font-weight:600;margin:0;letter-spacing:.01em}
+h1{font-size:26px}
+h2{font-size:17px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim)}
+.hint{color:var(--cream-dim);font-size:14px;margin:0}
+.figure{font-family:var(--figure);font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   SIGNATURE: the tap target. Concentric rings ride outward on
+   a loop to make the invisible NFC field visible, so players
+   know where the antenna is without being told twice.
+   ============================================================ */
+.tap-target{
+  position:relative;flex:1;min-height:230px;
+  display:grid;place-items:center;
+  border:none;background:none;color:inherit;
+  font:inherit;cursor:pointer;padding:0;
+  width:100%;
+}
+.tap-rings{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.tap-rings i{
+  position:absolute;border:1.5px solid var(--brass);
+  border-radius:50%;width:96px;height:96px;opacity:0;
+  animation:ripple 3s cubic-bezier(.2,.6,.3,1) infinite;
+}
+.tap-rings i:nth-child(2){animation-delay:1s}
+.tap-rings i:nth-child(3){animation-delay:2s}
+@keyframes ripple{
+  0%{transform:scale(1);opacity:.55}
+  100%{transform:scale(2.6);opacity:0}
+}
+.tap-core{
+  position:relative;width:132px;height:132px;border-radius:50%;
+  display:grid;place-items:center;text-align:center;
+  background:radial-gradient(circle at 50% 38%,var(--panel-hi),var(--panel));
+  border:2px solid var(--brass-dim);
+}
+.tap-core span{
+  font-family:var(--display);font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;font-size:13px;
+  color:var(--brass);
+}
+.tap-target:focus-visible .tap-core{outline:2px solid var(--cream);outline-offset:6px}
+
+/* ---------- roster ---------- */
+.roster{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.roster li{
+  display:flex;align-items:center;gap:12px;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:12px 14px;
+}
+.chip{width:10px;height:26px;border-radius:3px;flex:none}
+.who{flex:1;min-width:0}
+.who b{display:block;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who small{color:var(--cream-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+.bal{font-family:var(--figure);font-weight:500;font-size:17px;font-variant-numeric:tabular-nums}
+.bal[data-broke="true"]{color:var(--debt)}
+
+/* ---------- big readout ---------- */
+.readout{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:22px 18px;text-align:center;
+}
+.readout .name{font-family:var(--display);font-size:22px;font-weight:600}
+.readout .amount{
+  font-family:var(--figure);font-size:40px;font-weight:500;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin-top:4px;
+}
+.readout .amount[data-broke="true"]{color:var(--debt)}
+.readout .sub{color:var(--cream-dim);font-size:13px;margin-top:6px}
+
+/* ---------- buttons ---------- */
+.stack{display:flex;flex-direction:column;gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button.btn{
+  font-family:var(--body);font-size:15px;font-weight:600;
+  color:var(--cream);background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:15px 14px;cursor:pointer;text-align:left;
+  transition:background .12s ease;
+}
+button.btn:hover{background:var(--panel-hi)}
+button.btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button.btn small{display:block;font-weight:400;font-size:12px;color:var(--cream-dim);margin-top:2px}
+button.btn[data-tone="go"]{border-color:var(--money);color:var(--money)}
+button.btn[data-tone="quiet"]{background:none;color:var(--cream-dim);text-align:center}
+button.btn[data-tone="brass"]{background:var(--brass);color:var(--ink);border-color:var(--brass);text-align:center}
+button.btn[data-tone="danger"]{color:var(--debt);border-color:var(--debt);text-align:center}
+button.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------- keypad ---------- */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keypad button{
+  font-family:var(--figure);font-size:24px;font-weight:500;
+  padding:16px 0;background:var(--panel);color:var(--cream);
+  border:1px solid var(--line);border-radius:var(--r);cursor:pointer;
+}
+.keypad button:active{background:var(--panel-hi)}
+.keypad button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.quickrow{display:flex;gap:8px;flex-wrap:wrap}
+.quickrow button{
+  font-family:var(--figure);font-size:13px;
+  padding:8px 12px;border-radius:999px;cursor:pointer;
+  background:none;color:var(--brass);border:1px solid var(--brass-dim);
+}
+
+/* ---------- inputs ---------- */
+input[type=text]{
+  width:100%;font:inherit;font-size:17px;color:var(--cream);
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:14px;
+}
+input[type=text]:focus{outline:2px solid var(--brass);outline-offset:0}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatches button{
+  width:38px;height:38px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;
+}
+.swatches button[aria-pressed="true"]{border-color:var(--cream)}
+
+/* ---------- ledger ---------- */
+.ledger{display:flex;flex-direction:column;gap:1px;margin:0;padding:0;list-style:none;
+  background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ledger li{background:var(--panel);padding:11px 13px;display:flex;gap:10px;align-items:baseline}
+.ledger .txt{flex:1;font-size:13.5px;min-width:0}
+.ledger .txt small{display:block;color:var(--cream-dim);font-size:11px}
+.ledger .amt{font-family:var(--figure);font-size:14px;font-variant-numeric:tabular-nums}
+
+/* ---------- property picker ---------- */
+.props{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;
+  max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.props button{
+  width:100%;display:flex;align-items:center;gap:11px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;cursor:pointer;color:var(--cream);font:inherit;text-align:left;
+}
+.props .chip{height:22px}
+.props .pname{flex:1;font-size:14.5px}
+.props .pprice{font-family:var(--figure);font-size:14px;color:var(--brass)}
+
+/* ---------- notices ---------- */
+.notice{
+  border:1px solid var(--brass-dim);border-radius:var(--r);
+  padding:14px;background:var(--panel);font-size:14px;color:var(--cream-dim);
+}
+.notice b{color:var(--cream);display:block;margin-bottom:4px;font-weight:600}
+.toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 22px);
+  transform:translateX(-50%) translateY(20px);
+  background:var(--brass);color:var(--ink);font-weight:600;font-size:14.5px;
+  padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;z-index:50;max-width:90vw;text-align:center;
+}
+.toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{
+  padding:10px var(--pad) calc(env(safe-area-inset-bottom) + 14px);
+  border-top:1px solid var(--line);display:flex;gap:8px;
+}
+footer button{
+  flex:1;font-family:var(--body);font-size:12.5px;letter-spacing:.06em;
+  text-transform:uppercase;background:none;border:none;color:var(--cream-dim);
+  padding:8px;cursor:pointer;border-radius:8px;
+}
+footer button:focus-visible{outline:2px solid var(--brass)}
+footer button[data-active="true"]{color:var(--brass)}
+
+/* ---------- added Nov 2026: deeds, choosers, standings ---------- */
+.tap-target.small{min-height:150px;flex:none}
+.chip.inline{display:inline-block;vertical-align:middle;height:20px}
+.roster li.clickable{cursor:pointer}
+.roster li.clickable:hover{background:var(--panel-hi)}
+.roster li.clickable:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.xbtn{background:none;border:1px solid var(--line);color:var(--cream-dim);border-radius:50%;
+  width:30px;height:30px;font-size:18px;line-height:1;cursor:pointer;flex:none}
+.props button[data-current="true"]{border-color:var(--brass)}
+.props .empty{color:var(--cream-dim);font-size:14px;padding:8px}
+#presetRow:empty{display:none}
+.deedcard{background:var(--cream);color:var(--ink);border-radius:var(--r);overflow:hidden;text-align:center}
+.deedcard .band{padding:16px 12px 12px;font-family:var(--display);font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;font-size:18px}
+.deedcard .body{padding:12px 14px 14px}
+.deedcard .owner{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#5d5a50}
+.deedcard .rentnow{font-size:30px;font-weight:600;margin-top:2px}
+.deedcard .sub{color:#5d5a50;font-size:13px}
+.renttable{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px;text-align:left}
+.renttable td{padding:5px 8px;border-top:1px solid #d8d0bd}
+.renttable td:last-child{text-align:right;font-family:var(--figure)}
+.renttable tr.on td{background:#E9DDB8;font-weight:700}
+.dice{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.dice button{font-family:var(--figure);font-size:24px;font-weight:500;padding:18px 0;
+  background:var(--panel);color:var(--cream);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+.dice button:active{background:var(--panel-hi)}
+
+@media (prefers-reduced-motion:reduce){
+  .tap-rings i{animation:none;opacity:.3}
+  *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark">Bank Terminal</div>
+  <div class="lamp" id="lamp" data-on="false"></div>
+  <div class="lamp-label" id="lampText">Idle</div>
+</div>
+
+<main>
+
+  <!-- ═══ PLAYERS / SETUP ═══ -->
+  <section class="view" data-view="setup" data-active="true">
+    <h1>Open the bank</h1>
+    <p class="hint">Tap each player's card to enroll them. Everyone starts with $1,500.</p>
+    <div id="nfcNotice"></div>
+    <ul class="roster" id="setupRoster"></ul>
+    <div class="stack">
+      <button class="btn" data-tone="brass" id="enrollBtn">Enroll a card</button>
+      <button class="btn" id="deedSetupBtn">Register deed stickers<small id="deedCount"></small></button>
+      <button class="btn" data-tone="go" id="openBankBtn" disabled>Open the bank</button>
+      <div class="grid2">
+        <button class="btn" id="standingsBtn">Standings<small>Net worth, best first</small></button>
+        <button class="btn" id="newGameBtn">New game<small>Keeps players and deeds</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NAMING A NEW CARD ═══ -->
+  <section class="view" data-view="name">
+    <h1>New card</h1>
+    <p class="hint figure" id="newCardId"></p>
+    <input type="text" id="nameInput" placeholder="Player name" autocomplete="off" maxlength="18">
+    <h2>Token colour</h2>
+    <div class="swatches" id="swatches"></div>
+    <div class="stack">
+      <button class="btn" data-tone="brass" id="saveNameBtn">Save player</button>
+      <button class="btn" data-tone="quiet" data-back="setup">Cancel</button>
+    </div>
+  </section>
+
+  <!-- ═══ DEED STICKER REGISTRATION ═══ -->
+  <section class="view" data-view="deedsetup">
+    <h1>Register deeds</h1>
+    <p class="hint">Hold the deed's sticker to the phone. One deed at a time, away from the pile.</p>
+    <div class="readout">
+      <div class="name"><span class="chip inline" id="dsChip"></span> <span id="dsName"></span></div>
+      <div class="sub" id="dsSub"></div>
+    </div>
+    <button class="tap-target small" id="dsTarget">
+      <div class="tap-rings"><i></i><i></i><i></i></div>
+      <div class="tap-core"><span>Tap<br>sticker</span></div>
+    </button>
+    <div class="grid2">
+      <button class="btn" data-tone="quiet" id="dsPrev">Previous</button>
+      <button class="btn" data-tone="quiet" id="dsSkip">Skip</button>
+    </div>
+    <ul class="props" id="dsList"></ul>
+    <button class="btn" data-tone="brass" data-back="setup">Done</button>
+  </section>
+
+  <!-- ═══ IDLE / SCANNING ═══ -->
+  <section class="view" data-view="idle">
+    <button class="tap-target" id="tapTarget">
+      <div class="tap-rings"><i></i><i></i><i></i></div>
+      <div class="tap-core"><span>Tap card<br>or deed</span></div>
+    </button>
+    <ul class="roster" id="idleRoster"></ul>
+  </section>
+
+  <!-- ═══ PLAYER ACTIONS ═══ -->
+  <section class="view" data-view="player">
+    <div class="readout">
+      <div class="name" id="pName"></div>
+      <div class="amount figure" id="pBal"></div>
+      <div class="sub" id="pSub">Available balance</div>
+    </div>
+    <div class="stack">
+      <button class="btn" data-tone="go" id="passGoBtn">Pass GO<small>Collect $200 from the bank</small></button>
+      <button class="btn" data-act="payrent">Pay rent<small>Tap the deed they landed on</small></button>
+      <div class="grid2">
+        <button class="btn" data-act="collect">Collect<small>From the bank</small></button>
+        <button class="btn" data-act="pay">Pay bank<small>Tax, fees, fines</small></button>
+      </div>
+      <button class="btn" data-act="payplayer">Pay another player<small>A deal, a card, a fine</small></button>
+      <div class="grid2">
+        <button class="btn" data-act="buy">Buy property<small>Price fills in</small></button>
+        <button class="btn" data-act="mine">My deeds<small id="pDeeds"></small></button>
+      </div>
+      <button class="btn" data-tone="quiet" data-back="idle">Done</button>
+    </div>
+  </section>
+
+  <!-- ═══ DEED ═══ -->
+  <section class="view" data-view="deed">
+    <div class="deedcard">
+      <div class="band" id="dBand"></div>
+      <div class="body">
+        <div class="owner" id="dOwner"></div>
+        <div class="rentnow figure" id="dRent"></div>
+        <div class="sub" id="dStatus"></div>
+        <table class="renttable" id="dTable"></table>
+      </div>
+    </div>
+    <div class="stack" id="dActions"></div>
+    <button class="btn" data-tone="quiet" data-back="idle">Done</button>
+  </section>
+
+  <!-- ═══ AMOUNT ═══ -->
+  <section class="view" data-view="amount">
+    <div class="readout">
+      <div class="name" id="amtWho"></div>
+      <div class="amount figure" id="amtDisplay">$0</div>
+      <div class="sub" id="amtSub"></div>
+    </div>
+    <div class="quickrow" id="presetRow"></div>
+    <div class="quickrow" id="quickRow"></div>
+    <div class="keypad" id="keypad"></div>
+    <div class="stack">
+      <button class="btn" data-tone="brass" id="amtConfirm">Confirm</button>
+      <button class="btn" data-tone="quiet" id="amtCancel">Cancel</button>
+    </div>
+  </section>
+
+  <!-- ═══ DICE (utilities) ═══ -->
+  <section class="view" data-view="dice">
+    <h1>What did they roll?</h1>
+    <p class="hint" id="diceHint"></p>
+    <div class="dice" id="diceGrid"></div>
+    <button class="btn" data-tone="quiet" id="diceCancel">Cancel</button>
+  </section>
+
+  <!-- ═══ CHOOSE A PLAYER ═══ -->
+  <section class="view" data-view="choose">
+    <h1 id="chTitle"></h1>
+    <p class="hint" id="chHint"></p>
+    <button class="tap-target small" id="chTarget">
+      <div class="tap-rings"><i></i><i></i><i></i></div>
+      <div class="tap-core"><span>Tap<br>card</span></div>
+    </button>
+    <h2>Or pick</h2>
+    <ul class="roster" id="chList"></ul>
+    <button class="btn" data-tone="quiet" id="chCancel">Cancel</button>
+  </section>
+
+  <!-- ═══ CHOOSE A PROPERTY ═══ -->
+  <section class="view" data-view="property">
+    <h1 id="prTitle"></h1>
+    <p class="hint" id="prHint"></p>
+    <ul class="props" id="propList"></ul>
+    <button class="btn" data-tone="quiet" id="prCancel">Cancel</button>
+  </section>
+
+  <!-- ═══ LEDGER ═══ -->
+  <section class="view" data-view="ledger">
+    <h1>Ledger</h1>
+    <p class="hint" id="ledgerHint">Every move, newest first.</p>
+    <ul class="ledger" id="ledgerList"></ul>
+    <div class="stack">
+      <button class="btn" data-tone="danger" id="undoBtn">Undo last transaction</button>
+      <button class="btn" data-tone="quiet" data-back="idle">Back</button>
+    </div>
+  </section>
+
+  <!-- ═══ STANDINGS ═══ -->
+  <section class="view" data-view="standings">
+    <h1>Standings</h1>
+    <p class="hint">Cash, plus deeds at printed price (half if mortgaged), plus what the buildings cost.</p>
+    <ul class="roster" id="standList"></ul>
+    <button class="btn" data-tone="quiet" data-back="setup">Back</button>
+  </section>
+
+</main>
+
+<footer>
+  <button data-nav="idle" data-active="true">Bank</button>
+  <button data-nav="deeds">Deeds</button>
+  <button data-nav="ledger">Ledger</button>
+  <button data-nav="setup">Players</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ════════════════════════════════════════════════════════════
+   1. GAME DATA
+   Full US-standard board. Rent arrays are
+   [base, 1 house, 2, 3, 4, hotel].
+   ════════════════════════════════════════════════════════════ */
+const GROUP_COLOR = {
+  brown:'#8B5A2B', lightblue:'#AEE0F5', pink:'#D93A96', orange:'#F08A24',
+  red:'#D62B2B', yellow:'#F5D547', green:'#1F9152', darkblue:'#2E52C4',
+  railroad:'#3D3D3D', utility:'#A8A8A8'
+};
+const LIGHT_GROUPS = new Set(['lightblue','yellow','utility']);
+
+const PROPERTIES = [
+  {n:'Mediterranean Avenue', g:'brown',     price:60,  house:50,  rent:[2,10,30,90,160,250]},
+  {n:'Baltic Avenue',        g:'brown',     price:60,  house:50,  rent:[4,20,60,180,320,450]},
+  {n:'Oriental Avenue',      g:'lightblue', price:100, house:50,  rent:[6,30,90,270,400,550]},
+  {n:'Vermont Avenue',       g:'lightblue', price:100, house:50,  rent:[6,30,90,270,400,550]},
+  {n:'Connecticut Avenue',   g:'lightblue', price:120, house:50,  rent:[8,40,100,300,450,600]},
+  {n:'St. Charles Place',    g:'pink',      price:140, house:100, rent:[10,50,150,450,625,750]},
+  {n:'States Avenue',        g:'pink',      price:140, house:100, rent:[10,50,150,450,625,750]},
+  {n:'Virginia Avenue',      g:'pink',      price:160, house:100, rent:[12,60,180,500,700,900]},
+  {n:'St. James Place',      g:'orange',    price:180, house:100, rent:[14,70,200,550,750,950]},
+  {n:'Tennessee Avenue',     g:'orange',    price:180, house:100, rent:[14,70,200,550,750,950]},
+  {n:'New York Avenue',      g:'orange',    price:200, house:100, rent:[16,80,220,600,800,1000]},
+  {n:'Kentucky Avenue',      g:'red',       price:220, house:150, rent:[18,90,250,700,875,1050]},
+  {n:'Indiana Avenue',       g:'red',       price:220, house:150, rent:[18,90,250,700,875,1050]},
+  {n:'Illinois Avenue',      g:'red',       price:240, house:150, rent:[20,100,300,750,925,1100]},
+  {n:'Atlantic Avenue',      g:'yellow',    price:260, house:150, rent:[22,110,330,800,975,1150]},
+  {n:'Ventnor Avenue',       g:'yellow',    price:260, house:150, rent:[22,110,330,800,975,1150]},
+  {n:'Marvin Gardens',       g:'yellow',    price:280, house:150, rent:[24,120,360,850,1025,1200]},
+  {n:'Pacific Avenue',       g:'green',     price:300, house:200, rent:[26,130,390,900,1100,1275]},
+  {n:'North Carolina Avenue',g:'green',     price:300, house:200, rent:[26,130,390,900,1100,1275]},
+  {n:'Pennsylvania Avenue',  g:'green',     price:320, house:200, rent:[28,150,450,1000,1200,1400]},
+  {n:'Park Place',           g:'darkblue',  price:350, house:200, rent:[35,175,500,1100,1300,1500]},
+  {n:'Boardwalk',            g:'darkblue',  price:400, house:200, rent:[50,200,600,1400,1700,2000]},
+  {n:'Reading Railroad',       g:'railroad', price:200, rr:true, rent:[25,50,100,200]},
+  {n:'Pennsylvania Railroad',  g:'railroad', price:200, rr:true, rent:[25,50,100,200]},
+  {n:'B. & O. Railroad',       g:'railroad', price:200, rr:true, rent:[25,50,100,200]},
+  {n:'Short Line',             g:'railroad', price:200, rr:true, rent:[25,50,100,200]},
+  {n:'Electric Company', g:'utility', price:150, util:true},
+  {n:'Water Works',      g:'utility', price:150, util:true}
+];
+
+const HOUSE_SUPPLY = 32, HOTEL_SUPPLY = 12;   // what's in the box
+const PAY_PRESETS = [
+  {label:'Income tax $200', amount:200, note:'Income tax'},
+  {label:'Luxury tax $100', amount:100, note:'Luxury tax'},
+  {label:'Get out of jail $50', amount:50, note:'Paid to leave jail'}
+];
+
+// Mortgage is always half the printed price; lifting it costs 10% on top.
+const mortgageValue = p => p.price / 2;
+const unmortgageCost = p => mortgageValue(p) + Math.ceil(mortgageValue(p) / 10);
+
+/**
+ * Rent owed on a property.
+ * @param {object} p        entry from PROPERTIES
+ * @param {number} houses   0-4, or 5 for a hotel
+ * @param {boolean} monopoly owner holds the full colour group
+ * @param {number} extra    railroads owned, or the dice roll for utilities
+ */
+function rentFor(p, houses = 0, monopoly = false, extra = 1){
+  if (p.rr)   return p.rent[Math.min(Math.max(extra,1),4) - 1];
+  if (p.util) return extra * (monopoly ? 10 : 4);
+  if (houses > 0) return p.rent[Math.min(houses,5)];
+  return monopoly ? p.rent[0] * 2 : p.rent[0];   // unimproved monopoly pays double
+}
+
+const groupOf = g => PROPERTIES.map((p, i) => i).filter(i => PROPERTIES[i].g === g);
+
+// The first token colour was lost from the chat export; brass stands in for it.
+const TOKEN_COLORS = ['#C9A24B','#D62B2B','#2E52C4','#1F9152','#F5D547','#D93A96','#F08A24','#8B5A2B','#EDE7D9'];
+const START_BALANCE = 1500;
+const BANK = 'BANK';
+const STORE_KEY = 'monopoly-bank';
+
+/* ════════════════════════════════════════════════════════════
+   2. STATE
+   Everything that changes during a game is DERIVED from the
+   ledger: balances, who owns each deed, houses, mortgages.
+   Each ledger entry may move money (from/to/amount) and may set
+   a deed's state (fx). Undo is still just popping the last entry.
+   ════════════════════════════════════════════════════════════ */
+const state = {
+  players: [],   // {id, name, color}
+  deeds: {},     // sticker serial -> index into PROPERTIES
+  ledger: [],    // {from, to, amount, note, ts, fx?:{prop, owner?, houses?, mortgaged?}}
+  open: false
+};
+
+let world = null;                    // derived cache, rebuilt on change
+function invalidate(){ world = null; }
+function W(){
+  if (world) return world;
+  const bal = {};
+  const props = PROPERTIES.map(() => ({ owner: null, houses: 0, mortgaged: false }));
+  for (const t of state.ledger){
+    if (t.amount){
+      if (t.to   && t.to   !== BANK) bal[t.to]   = (bal[t.to]   ?? START_BALANCE) + t.amount;
+      if (t.from && t.from !== BANK) bal[t.from] = (bal[t.from] ?? START_BALANCE) - t.amount;
+    }
+    if (t.fx){
+      const s = props[t.fx.prop];
+      if ('owner' in t.fx)     s.owner = t.fx.owner;
+      if ('houses' in t.fx)    s.houses = t.fx.houses;
+      if ('mortgaged' in t.fx) s.mortgaged = t.fx.mortgaged;
+    }
+  }
+  return (world = { bal, props });
+}
+
+const findPlayer = id => state.players.find(p => p.id === id);
+const balanceOf  = id => W().bal[id] ?? START_BALANCE;
+const deedState  = i  => W().props[i];
+const deedsOf    = id => PROPERTIES.map((p, i) => i).filter(i => deedState(i).owner === id);
+const nameOf = id => (!id || id === BANK) ? 'Bank' : (findPlayer(id)?.name ?? 'Unknown');
+const money  = n => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US');
+
+function ownsGroup(owner, g){
+  return !!owner && groupOf(g).every(i => deedState(i).owner === owner);
+}
+function buildingsInPlay(){
+  let houses = 0, hotels = 0;
+  for (const s of W().props){ if (s.houses === 5) hotels++; else houses += s.houses; }
+  return { houses, hotels };
+}
+
+/** Rent due on deed i right now. dice is only used for utilities. */
+function rentDue(i, dice = 0){
+  const p = PROPERTIES[i], s = deedState(i);
+  if (!s.owner || s.mortgaged) return 0;
+  if (p.rr)   return rentFor(p, 0, false, groupOf('railroad').filter(j => deedState(j).owner === s.owner).length);
+  if (p.util) return rentFor(p, 0, ownsGroup(s.owner, 'utility'), dice);
+  return rentFor(p, s.houses, ownsGroup(s.owner, p.g));
+}
+
+function netWorth(id){
+  let deeds = 0, buildings = 0;
+  for (const i of deedsOf(id)){
+    const p = PROPERTIES[i], s = deedState(i);
+    deeds += s.mortgaged ? mortgageValue(p) : p.price;
+    if (s.houses) buildings += s.houses * p.house;
+  }
+  const cash = balanceOf(id);
+  return { cash, deeds, buildings, total: cash + deeds + buildings };
+}
+
+function post(from, to, amount, note, fx){
+  const t = { from, to, amount, note, ts: Date.now() };
+  if (fx) t.fx = fx;
+  state.ledger.push(t);
+  invalidate(); save();
+  if (from && from !== BANK && balanceOf(from) < 0)
+    setTimeout(() => toast(nameOf(from) + ' is ' + money(-balanceOf(from)) + ' short. Mortgage or sell to cover it.'), 2700);
+  renderAll();
+}
+
+/* ---- persistence: best-effort, never load-bearing ---- */
+function save(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){ /* fine */ }
+}
+function load(){
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.players)){
+      state.players = parsed.players;
+      state.deeds   = parsed.deeds || {};
+      state.ledger  = parsed.ledger || [];
+      state.open    = !!parsed.open;
+    }
+  } catch(e){ /* fine */ }
+  invalidate();
+}
+
+/* ════════════════════════════════════════════════════════════
+   3. NFC
+   A card's or sticker's factory serial number IS its identity.
+   Nothing is ever written to a tag, so a tag cannot be forged
+   into money and a half-finished tap cannot corrupt anything.
+   ════════════════════════════════════════════════════════════ */
+const nfcSupported = typeof NDEFReader !== 'undefined';
+let reader = null;
+let scanning = false;
+
+async function startScanning(){
+  if (!nfcSupported || scanning) return;
+  try {
+    reader = new NDEFReader();
+    reader.onreading = ev => handleTap(ev.serialNumber);
+    reader.onreadingerror = () => toast('Tag unreadable. Format it once in NFC Tools, then try again.');
+    await reader.scan();
+    scanning = true;
+    setLamp(true, 'Ready');
+  } catch (err) {
+    setLamp(false, 'Blocked');
+    toast('NFC is off or blocked. Turn on NFC, then tap the rings.');
+  }
+}
+
+/* What a tap means depends on the screen: each view sets onTap. */
+let onTap = null;
+let lastTap = { serial: null, at: 0 };
+
+function resolve(serial){
+  const p = findPlayer(serial);
+  if (p) return { kind: 'player', player: p };
+  if (serial in state.deeds) return { kind: 'deed', idx: state.deeds[serial] };
+  return null;
+}
+
+function handleTap(serial){
+  if (!serial) return;
+  const now = Date.now();
+  if (serial === lastTap.serial && now - lastTap.at < 1200) return;   // one tap, one read
+  lastTap = { serial, at: now };
+  beep(); buzz();
+  if (onTap) onTap(serial);
+  else toast('Finish this screen first');
+}
+
+function identifyTap(serial){
+  const r = resolve(serial);
+  if (!r) { toast('Unknown tag. Enroll it under Players.'); return; }
+  if (r.kind === 'player') openPlayer(r.player);
+  else openDeed(r.idx);
+}
+
+/* Screen must stay awake or scanning stops mid-game. */
+let wakeLock = null;
+async function keepAwake(){
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }
+  catch(e){ /* fine */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') keepAwake();
+});
+
+/* ---- feedback ---- */
+let audioCtx = null;
+function beep(){
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = 1180;
+    g.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.13);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.14);
+  } catch(e){ /* fine */ }
+}
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(28); } catch(e){} };
+
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.dataset.show = 'true';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.dataset.show = 'false', 2600);
+}
+function setLamp(on, text){
+  document.getElementById('lamp').dataset.on = String(on);
+  document.getElementById('lampText').textContent = text;
+}
+
+/* ════════════════════════════════════════════════════════════
+   4. VIEWS
+   ════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const NAV_FOR = { idle:'idle', ledger:'ledger', setup:'setup', standings:'setup', deedsetup:'setup', name:'setup' };
+let current = 'setup';
+let activePlayer = null;     // whose turn at the terminal
+let activeDeed = null;       // index of the deed on screen
+let pendingCard = null;      // serial waiting to be named
+
+function show(name, nav){
+  current = name;
+  document.querySelectorAll('.view').forEach(v =>
+    v.dataset.active = String(v.dataset.view === name));
+  const navName = nav || NAV_FOR[name];
+  document.querySelectorAll('footer button').forEach(b =>
+    b.dataset.active = String(b.dataset.nav === navName));
+  // On browsing screens any card or deed jumps straight to it; mid-flow screens set their own onTap.
+  onTap = ['idle','player','deed','ledger'].includes(name) ? identifyTap : null;
+  if (name === 'idle' && scanning) setLamp(true, 'Ready');
+  renderAll();
+  window.scrollTo(0, 0);
+}
+
+function resetToIdle(){
+  activePlayer = null; activeDeed = null;
+  show('idle');
+}
+function openPlayer(p){ activePlayer = p; show('player'); }
+function openDeed(i){ activeDeed = i; show('deed'); }
+
+function chip(color){ return '<span class="chip" style="background:' + color + '"></span>'; }
+
+function renderRoster(el, opts = {}){
+  el.innerHTML = '';
+  if (!state.players.length){
+    el.innerHTML = '<li><div class="who"><b>No players yet</b>' +
+      '<small>Enroll a card to begin</small></div></li>';
+    return;
+  }
+  for (const p of state.players){
+    const bal = balanceOf(p.id);
+    const n = deedsOf(p.id).length;
+    const li = document.createElement('li');
+    li.innerHTML = chip(p.color) +
+      '<span class="who"><b></b><small></small></span>' +
+      '<span class="bal figure" data-broke="' + (bal < 0) + '">' + money(bal) + '</span>';
+    li.querySelector('b').textContent = p.name;
+    li.querySelector('small').textContent = opts.ids ? p.id.slice(0, 20) : (n + (n === 1 ? ' deed' : ' deeds'));
+    if (opts.onClick){
+      li.classList.add('clickable');
+      li.tabIndex = 0;
+      li.onclick = () => opts.onClick(p);
+    }
+    if (opts.removable){
+      const x = document.createElement('button');
+      x.className = 'xbtn'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.onclick = ev => {
+        ev.stopPropagation();
+        if (state.ledger.length){ toast('Start a new game before removing players'); return; }
+        state.players = state.players.filter(q => q.id !== p.id);
+        save(); renderAll();
+      };
+      li.appendChild(x);
+    }
+    el.appendChild(li);
+  }
+}
+
+function renderLedger(){
+  const el = $('ledgerList');
+  el.innerHTML = '';
+  if (!state.ledger.length){
+    $('ledgerHint').textContent = 'Nothing has moved yet. Transactions appear here as they happen.';
+    return;
+  }
+  $('ledgerHint').textContent = 'Every move, newest first.';
+  [...state.ledger].reverse().slice(0, 80).forEach(t => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="txt"><span></span><small></small></span>' +
+      '<span class="amt">' + (t.amount ? money(t.amount) : '·') + '</span>';
+    li.querySelector('span span').textContent = t.amount ? nameOf(t.from) + ' → ' + nameOf(t.to) : 'Deed';
+    li.querySelector('small').textContent = t.note;
+    el.appendChild(li);
+  });
+}
+
+function renderPlayer(){
+  if (!activePlayer) return;
+  const bal = balanceOf(activePlayer.id);
+  $('pName').textContent = activePlayer.name;
+  $('pBal').textContent = money(bal);
+  $('pBal').dataset.broke = String(bal < 0);
+  const n = deedsOf(activePlayer.id).length;
+  $('pDeeds').textContent = n ? n + (n === 1 ? ' deed' : ' deeds') : 'None yet';
+}
+
+function statusLine(i){
+  const s = deedState(i);
+  if (!s.owner) return 'For sale · ' + money(PROPERTIES[i].price);
+  if (s.mortgaged) return 'Mortgaged · no rent';
+  if (s.houses === 5) return 'Hotel';
+  if (s.houses) return s.houses + (s.houses === 1 ? ' house' : ' houses');
+  return PROPERTIES[i].g === 'railroad' || PROPERTIES[i].g === 'utility' ? '' : (ownsGroup(s.owner, PROPERTIES[i].g) ? 'Full colour set · rent doubled' : 'No buildings');
+}
+
+function renderDeed(){
+  if (activeDeed == null) return;
+  const i = activeDeed, p = PROPERTIES[i], s = deedState(i);
+  const band = $('dBand');
+  band.textContent = p.n;
+  band.style.background = GROUP_COLOR[p.g];
+  band.style.color = LIGHT_GROUPS.has(p.g) ? 'var(--ink)' : '#fff';
+  $('dOwner').textContent = s.owner ? 'Owned by ' + nameOf(s.owner) : 'Owned by the bank';
+  $('dStatus').textContent = statusLine(i);
+
+  const rentEl = $('dRent');
+  if (!s.owner) rentEl.textContent = money(p.price);
+  else if (p.util) rentEl.textContent = (ownsGroup(s.owner, 'utility') ? '10' : '4') + '× dice';
+  else rentEl.textContent = s.mortgaged ? '$0' : money(rentDue(i)) + ' rent';
+
+  // printed rent table, current row highlighted
+  let rows = [];
+  if (p.rr){
+    const owned = s.owner ? groupOf('railroad').filter(j => deedState(j).owner === s.owner).length : 0;
+    rows = p.rent.map((r, k) => [(k + 1) + ' railroad' + (k ? 's' : '') + ' owned', money(r), owned === k + 1]);
+  } else if (p.util){
+    const both = ownsGroup(s.owner, 'utility');
+    rows = [['One utility owned', '4× dice', !!s.owner && !both], ['Both utilities owned', '10× dice', both]];
+  } else {
+    const mono = ownsGroup(s.owner, p.g);
+    rows = [
+      ['Rent', money(p.rent[0]), !!s.owner && !s.houses && !mono],
+      ['With colour set', money(p.rent[0] * 2), !!s.owner && !s.houses && mono],
+      ...[1,2,3,4].map(h => ['With ' + h + ' house' + (h > 1 ? 's' : ''), money(p.rent[h]), s.houses === h]),
+      ['With hotel', money(p.rent[5]), s.houses === 5],
+      ['Each house costs', money(p.house), false]
+    ];
+  }
+  rows.push(['Mortgage value', money(mortgageValue(p)), false]);
+  $('dTable').innerHTML = rows.map(([a, b, on]) =>
+    '<tr' + (on && !s.mortgaged ? ' class="on"' : '') + '><td>' + a + '</td><td>' + b + '</td></tr>').join('');
+
+  // actions
+  const box = $('dActions');
+  box.innerHTML = '';
+  const add = (label, sub, fn, tone) => {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    if (tone) b.dataset.tone = tone;
+    b.innerHTML = '<span></span>' + (sub ? '<small></small>' : '');
+    b.querySelector('span').textContent = label;
+    if (sub) b.querySelector('small').textContent = sub;
+    b.onclick = fn;
+    box.appendChild(b);
+    return b;
+  };
+
+  if (!s.owner){
+    add('Sell to a player', 'Tap the buyer\'s card', () => sellDeedFlow(i), 'brass');
+    return;
+  }
+  if (!s.mortgaged)
+    add('Charge rent', 'Tap the card of whoever landed here', () => chargeRentFlow(i), 'brass');
+  if (!p.rr && !p.util && !s.mortgaged){
+    const grid = document.createElement('div'); grid.className = 'grid2'; box.appendChild(grid);
+    const addH = add(s.houses === 4 ? 'Build hotel' : 'Add house', money(p.house), () => buildHouse(i));
+    const selH = add(s.houses === 5 ? 'Sell hotel' : 'Sell house', '+' + money(p.house / 2), () => sellHouse(i));
+    grid.append(addH, selH);
+    addH.disabled = s.houses >= 5; selH.disabled = s.houses === 0;
+  }
+  if (s.mortgaged) add('Lift mortgage', 'Pay ' + money(unmortgageCost(p)) + ' (includes 10%)', () => unmortgage(i), 'go');
+  else add('Mortgage', 'Bank pays ' + nameOf(s.owner) + ' ' + money(mortgageValue(p)), () => mortgage(i));
+  add('Hand over this deed', 'A trade, or a bankrupt player giving it up', () => transferFlow(i));
+}
+
+function renderDeedSetup(){
+  const p = PROPERTIES[dsIdx];
+  $('dsChip').style.background = GROUP_COLOR[p.g];
+  $('dsName').textContent = p.n;
+  const has = Object.keys(state.deeds).find(k => state.deeds[k] === dsIdx);
+  $('dsSub').textContent = has ? 'Registered. Tap a different sticker to replace it.' : 'Not registered yet';
+  renderPropList($('dsList'), {
+    label: i => Object.values(state.deeds).includes(i) ? '✓' : '',
+    current: dsIdx,
+    onPick: i => { dsIdx = i; renderDeedSetup(); }
+  });
+}
+
+function renderPropList(el, { filter = () => true, label = () => '', onPick, current: cur = -1 }){
+  el.innerHTML = '';
+  PROPERTIES.forEach((p, i) => {
+    if (!filter(i)) return;
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    if (i === cur) b.dataset.current = 'true';
+    b.innerHTML = chip(GROUP_COLOR[p.g]) + '<span class="pname"></span><span class="pprice"></span>';
+    b.querySelector('.pname').textContent = p.n;
+    b.querySelector('.pprice').textContent = label(i);
+    b.onclick = () => onPick(i);
+    li.appendChild(b); el.appendChild(li);
+  });
+  if (!el.children.length) el.innerHTML = '<li class="empty">Nothing here yet</li>';
+}
+
+function renderStandings(){
+  const el = $('standList');
+  el.innerHTML = '';
+  const rows = state.players.map(p => ({ p, w: netWorth(p.id) })).sort((a, b) => b.w.total - a.w.total);
+  rows.forEach(({ p, w }, k) => {
+    const li = document.createElement('li');
+    li.innerHTML = chip(p.color) + '<span class="who"><b></b><small></small></span>' +
+      '<span class="bal figure">' + money(w.total) + '</span>';
+    li.querySelector('b').textContent = (k + 1) + '. ' + p.name;
+    li.querySelector('small').textContent = 'Cash ' + money(w.cash) + ' · deeds ' + money(w.deeds) + ' · buildings ' + money(w.buildings);
+    el.appendChild(li);
+  });
+  if (!rows.length) el.innerHTML = '<li><div class="who"><b>No players yet</b></div></li>';
+}
+
+function renderAll(){
+  const v = current;
+  if (v === 'setup'){
+    renderRoster($('setupRoster'), { removable: true, ids: true });
+    const n = Object.keys(state.deeds).length;
+    $('deedCount').textContent = n + ' of 28 registered';
+    $('openBankBtn').disabled = state.players.length < 2;
+    $('openBankBtn').textContent = state.open ? 'Back to the table' : 'Open the bank';
+  }
+  if (v === 'idle') renderRoster($('idleRoster'), { onClick: openPlayer });
+  if (v === 'ledger'){ renderLedger(); $('undoBtn').disabled = !state.ledger.length; }
+  if (v === 'player') renderPlayer();
+  if (v === 'deed') renderDeed();
+  if (v === 'deedsetup') renderDeedSetup();
+  if (v === 'standings') renderStandings();
+}
+
+/* ════════════════════════════════════════════════════════════
+   5. REUSABLE STEPS
+   Each flow is a chain of these: choose a player, choose a deed,
+   enter an amount. Cards and stickers work on every step, and
+   every step also has an on-screen list for a lost card.
+   ════════════════════════════════════════════════════════════ */
+let amt = { str: '', onConfirm: null, onCancel: null };
+
+function enterAmount({ who, note, preset = 0, presets = [], onConfirm, onCancel }){
+  amt = { str: preset ? String(preset) : '', note, onConfirm, onCancel };
+  $('amtWho').textContent = who;
+  $('amtSub').textContent = note;
+  const pr = $('presetRow');
+  pr.innerHTML = '';
+  presets.forEach(x => {
+    const b = document.createElement('button');
+    b.textContent = x.label;
+    b.onclick = () => { amt.str = String(x.amount); amt.note = x.note; $('amtSub').textContent = x.note; drawAmount(); };
+    pr.appendChild(b);
+  });
+  show('amount');
+  drawAmount();
+}
+function drawAmount(){
+  $('amtDisplay').textContent = '$' + (Number(amt.str || 0)).toLocaleString('en-US');
+}
+
+let chooser = null;
+function choosePlayer({ title, hint, exclude = [], allowBank = false, onPick, onCancel }){
+  chooser = { onPick, onCancel };
+  $('chTitle').textContent = title;
+  $('chHint').textContent = hint || '';
+  show('choose');
+  const ok = id => !exclude.includes(id);
+  onTap = serial => {
+    const r = resolve(serial);
+    if (!r || r.kind !== 'player') { toast('That isn\'t a player card'); return; }
+    if (!ok(r.player.id)) { toast('Pick a different player'); return; }
+    onPick(r.player.id);
+  };
+  const el = $('chList');
+  el.innerHTML = '';
+  const opts = state.players.filter(p => ok(p.id)).map(p => ({ id: p.id, name: p.name, color: p.color }));
+  if (allowBank) opts.push({ id: BANK, name: 'The bank', color: 'var(--brass)' });
+  opts.forEach(o => {
+    const li = document.createElement('li');
+    li.className = 'clickable'; li.tabIndex = 0;
+    li.innerHTML = chip(o.color) + '<span class="who"><b></b></span>';
+    li.querySelector('b').textContent = o.name;
+    li.onclick = () => onPick(o.id);
+    el.appendChild(li);
+  });
+}
+
+let propChooser = null;
+function chooseProperty({ title, hint, filter = () => true, label, onPick, onCancel, nav }){
+  propChooser = { onCancel };
+  $('prTitle').textContent = title;
+  $('prHint').textContent = hint || '';
+  show('property', nav);
+  onTap = serial => {
+    const r = resolve(serial);
+    if (!r || r.kind !== 'deed') { toast('That isn\'t a registered deed'); return; }
+    if (!filter(r.idx)) { toast(PROPERTIES[r.idx].n + ' doesn\'t fit here'); return; }
+    onPick(r.idx);
+  };
+  renderPropList($('propList'), {
+    filter, onPick,
+    label: label || (i => { const o = deedState(i).owner; return o ? nameOf(o) : money(PROPERTIES[i].price); })
+  });
+}
+
+function askDice(hint, onRoll, onCancel){
+  $('diceHint').textContent = hint;
+  const g = $('diceGrid');
+  g.innerHTML = '';
+  for (let n = 2; n <= 12; n++){
+    const b = document.createElement('button');
+    b.textContent = n;
+    b.onclick = () => onRoll(n);
+    g.appendChild(b);
+  }
+  $('diceCancel').onclick = onCancel;
+  show('dice');
+}
+
+/* ════════════════════════════════════════════════════════════
+   6. FLOWS
+   ════════════════════════════════════════════════════════════ */
+const backToPlayer = () => show('player');
+const backToDeed = () => show('deed');
+
+function payBankFlow(){
+  const me = activePlayer;
+  enterAmount({ who: me.name, note: 'Pay the bank', presets: PAY_PRESETS, onCancel: backToPlayer,
+    onConfirm: (n, note) => { post(me.id, BANK, n, note); toast(me.name + ' paid ' + money(n)); resetToIdle(); } });
+}
+function collectFlow(){
+  const me = activePlayer;
+  enterAmount({ who: me.name, note: 'Collect from the bank', onCancel: backToPlayer,
+    onConfirm: (n, note) => { post(BANK, me.id, n, note === 'Collect from the bank' ? 'From the bank' : note); toast(me.name + ' collected ' + money(n)); resetToIdle(); } });
+}
+function payPlayerFlow(){
+  const me = activePlayer;
+  enterAmount({ who: me.name, note: 'Pay another player', onCancel: backToPlayer,
+    onConfirm: n => choosePlayer({
+      title: 'Who gets paid?', hint: me.name + ' is paying ' + money(n) + '.', exclude: [me.id],
+      onCancel: backToPlayer,
+      onPick: to => { post(me.id, to, n, 'Payment'); toast(me.name + ' paid ' + nameOf(to) + ' ' + money(n)); resetToIdle(); }
+    }) });
+}
+
+/* Rent: works deed-first (tap the deed, then the payer) or
+   player-first (tap the payer, then the deed). Same ending. */
+function finishRent(i, payer, back){
+  const p = PROPERTIES[i], s = deedState(i);
+  if (!s.owner) { toast(p.n + ' is still for sale'); return; }
+  if (s.mortgaged) { toast(p.n + ' is mortgaged. No rent due.'); return; }
+  if (s.owner === payer) { toast(nameOf(payer) + ' owns it. No rent due.'); return; }
+  const charge = dice => {
+    const due = rentDue(i, dice);
+    const detail = p.util ? ' (rolled ' + dice + ')' : (s.houses === 5 ? ' (hotel)' : s.houses ? ' (' + s.houses + ' house' + (s.houses > 1 ? 's' : '') + ')' : '');
+    enterAmount({ who: nameOf(payer) + ' → ' + nameOf(s.owner), note: 'Rent on ' + p.n + detail, preset: due, onCancel: back,
+      onConfirm: (n, note) => {
+        post(payer, s.owner, n, note);
+        toast(nameOf(payer) + ' paid ' + nameOf(s.owner) + ' ' + money(n));
+        resetToIdle();
+      } });
+  };
+  if (p.util) askDice(nameOf(payer) + ' landed on ' + p.n + '. Rent is ' + (ownsGroup(s.owner, 'utility') ? '10' : '4') + '× the roll.', charge, back);
+  else charge(0);
+}
+function payRentFlow(){
+  const me = activePlayer;
+  chooseProperty({
+    title: 'Which deed?', hint: 'Tap the deed ' + me.name + ' landed on, or pick it below.',
+    filter: i => { const o = deedState(i).owner; return !!o && o !== me.id; },
+    onCancel: backToPlayer,
+    onPick: i => { activeDeed = i; finishRent(i, me.id, backToPlayer); }
+  });
+}
+function chargeRentFlow(i){
+  choosePlayer({
+    title: 'Who landed here?', hint: 'Rent on ' + PROPERTIES[i].n + '.', exclude: [deedState(i).owner],
+    onCancel: backToDeed,
+    onPick: payer => finishRent(i, payer, backToDeed)
+  });
+}
+
+function buyDeed(i, buyer, back){
+  const p = PROPERTIES[i];
+  enterAmount({ who: nameOf(buyer), note: 'Bought ' + p.n, preset: p.price, onCancel: back,
+    onConfirm: n => {
+      if (deedState(i).owner){ toast(p.n + ' is already owned'); return; }
+      post(buyer, BANK, n, (n === p.price ? 'Bought ' : 'Won at auction: ') + p.n, { prop: i, owner: buyer, houses: 0, mortgaged: false });
+      toast(nameOf(buyer) + ' bought ' + p.n);
+      resetToIdle();
+    } });
+}
+function buyFlow(){
+  const me = activePlayer;
+  chooseProperty({
+    title: 'Buy property', hint: 'Tap the deed or pick it. You can change the price for an auction.',
+    filter: i => !deedState(i).owner, onCancel: backToPlayer,
+    label: i => money(PROPERTIES[i].price),
+    onPick: i => buyDeed(i, me.id, backToPlayer)
+  });
+}
+function sellDeedFlow(i){
+  choosePlayer({ title: 'Who\'s buying?', hint: PROPERTIES[i].n + ' · ' + money(PROPERTIES[i].price), onCancel: backToDeed,
+    onPick: buyer => buyDeed(i, buyer, backToDeed) });
+}
+function myDeedsFlow(){
+  const me = activePlayer;
+  chooseProperty({
+    title: me.name + '’s deeds', hint: 'Pick one to build, mortgage or trade.',
+    filter: i => deedState(i).owner === me.id, label: i => statusLine(i).split(' · ')[0],
+    onCancel: backToPlayer, onPick: openDeed
+  });
+}
+
+function buildHouse(i){
+  const p = PROPERTIES[i], s = deedState(i), group = groupOf(p.g);
+  if (!ownsGroup(s.owner, p.g)) { toast('Own the whole colour set first'); return; }
+  if (group.some(j => deedState(j).mortgaged)) { toast('Lift the mortgages in this set first'); return; }
+  if (s.houses >= 5) return;
+  if (s.houses > Math.min(...group.map(j => deedState(j).houses))) { toast('Build evenly: add to the others in this set first'); return; }
+  const b = buildingsInPlay();
+  if (s.houses === 4 && b.hotels >= HOTEL_SUPPLY) { toast('The bank is out of hotels'); return; }
+  if (s.houses < 4 && b.houses >= HOUSE_SUPPLY) { toast('The bank is out of houses'); return; }
+  const next = s.houses + 1;
+  post(s.owner, BANK, p.house, (next === 5 ? 'Hotel on ' : 'House ' + next + ' on ') + p.n, { prop: i, houses: next });
+  toast(next === 5 ? 'Hotel built' : 'House ' + next + ' built');
+}
+function sellHouse(i){
+  const p = PROPERTIES[i], s = deedState(i), group = groupOf(p.g);
+  if (!s.houses) return;
+  if (s.houses < Math.max(...group.map(j => deedState(j).houses))) { toast('Sell evenly: sell from the others in this set first'); return; }
+  if (s.houses === 5 && buildingsInPlay().houses + 4 > HOUSE_SUPPLY) { toast('Not enough houses in the bank to break up the hotel'); return; }
+  post(BANK, s.owner, p.house / 2, (s.houses === 5 ? 'Sold hotel on ' : 'Sold house on ') + p.n, { prop: i, houses: s.houses - 1 });
+  toast('Sold for ' + money(p.house / 2));
+}
+function mortgage(i){
+  const p = PROPERTIES[i], s = deedState(i);
+  if (groupOf(p.g).some(j => deedState(j).houses)) { toast('Sell the buildings in this set first'); return; }
+  post(BANK, s.owner, mortgageValue(p), 'Mortgaged ' + p.n, { prop: i, mortgaged: true });
+  toast(nameOf(s.owner) + ' got ' + money(mortgageValue(p)));
+}
+function unmortgage(i){
+  const p = PROPERTIES[i], s = deedState(i);
+  post(s.owner, BANK, unmortgageCost(p), 'Lifted mortgage on ' + p.n, { prop: i, mortgaged: false });
+  toast('Mortgage lifted');
+}
+function transferFlow(i){
+  const p = PROPERTIES[i], s = deedState(i);
+  if (groupOf(p.g).some(j => deedState(j).houses)) { toast('Sell the buildings in this set first'); return; }
+  choosePlayer({
+    title: 'Who gets ' + p.n + '?', hint: 'Settle any cash with "Pay another player". Choose the bank if a player is bankrupt.',
+    exclude: [s.owner], allowBank: true, onCancel: backToDeed,
+    onPick: to => {
+      const toBank = to === BANK;
+      post(null, null, 0, p.n + ': ' + nameOf(s.owner) + ' → ' + (toBank ? 'back to the bank' : nameOf(to)),
+        toBank ? { prop: i, owner: null, houses: 0, mortgaged: false } : { prop: i, owner: to });
+      if (!toBank && s.mortgaged) toast(nameOf(to) + ' now holds a mortgaged deed. Lifting it later includes the 10%.');
+      else toast(p.n + ' handed over');
+      openDeed(i);
+    }
+  });
+}
+
+/* ---- deed sticker registration ---- */
+let dsIdx = 0;
+function deedSetupTap(serial){
+  if (findPlayer(serial)) { toast('That\'s ' + findPlayer(serial).name + '’s player card'); return; }
+  for (const k of Object.keys(state.deeds)) if (state.deeds[k] === dsIdx) delete state.deeds[k];
+  state.deeds[serial] = dsIdx;     // a sticker moved to a new deed drops its old one
+  save();
+  toast(PROPERTIES[dsIdx].n + ' registered');
+  const next = PROPERTIES.findIndex((p, i) => i > dsIdx && !Object.values(state.deeds).includes(i));
+  if (next === -1 && Object.keys(state.deeds).length >= PROPERTIES.length){ toast('All 28 deeds registered'); show('setup'); return; }
+  dsIdx = next === -1 ? Math.min(dsIdx + 1, PROPERTIES.length - 1) : next;
+  renderDeedSetup();
+}
+function openDeedSetup(){
+  const first = PROPERTIES.findIndex((p, i) => !Object.values(state.deeds).includes(i));
+  dsIdx = first === -1 ? 0 : first;
+  show('deedsetup');
+  onTap = deedSetupTap;
+}
+
+/* ════════════════════════════════════════════════════════════
+   7. WIRING
+   ════════════════════════════════════════════════════════════ */
+const fakeSerial = () => 'DEMO-' + Math.random().toString(16).slice(2, 10).toUpperCase();
+
+function boot(){
+  load();
+
+  $('nfcNotice').innerHTML = nfcSupported
+    ? '<div class="notice"><b>NFC ready</b>Tap Enroll, then hold a card against the back of the phone. ' +
+      'Brand-new tags: write any record to each one once in the free NFC Tools app so Chrome reads them reliably.</div>'
+    : '<div class="notice"><b>No NFC on this browser</b>Web NFC needs Chrome on Android over HTTPS. ' +
+      'Here, tapping the rings makes a stand-in card so you can try every flow.</div>';
+
+  // colour swatches
+  const sw = $('swatches');
+  TOKEN_COLORS.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.style.background = c;
+    b.setAttribute('aria-label', 'Colour ' + (i + 1));
+    b.setAttribute('aria-pressed', String(i === 0));
+    b.onclick = () => {
+      [...sw.children].forEach(x => x.setAttribute('aria-pressed', 'false'));
+      b.setAttribute('aria-pressed', 'true');
+    };
+    sw.appendChild(b);
+  });
+
+  // keypad
+  const kp = $('keypad');
+  ['1','2','3','4','5','6','7','8','9','00','0','⌫'].forEach(k => {
+    const b = document.createElement('button');
+    b.textContent = k;
+    b.onclick = () => {
+      if (k === '⌫') amt.str = amt.str.slice(0, -1);
+      else if (amt.str.length < 7) amt.str = (amt.str + k).replace(/^0+(?=\d)/, '');
+      drawAmount();
+    };
+    kp.appendChild(b);
+  });
+  [10, 50, 100, 200, 500].forEach(v => {
+    const b = document.createElement('button');
+    b.textContent = '+' + money(v);
+    b.onclick = () => { amt.str = String(Number(amt.str || 0) + v); drawAmount(); };
+    $('quickRow').appendChild(b);
+  });
+  $('amtConfirm').onclick = () => {
+    const n = Number(amt.str || 0);
+    if (n <= 0){ toast('Enter an amount first'); return; }
+    amt.onConfirm(n, amt.note);
+  };
+  $('amtCancel').onclick = () => (amt.onCancel || resetToIdle)();
+  $('chCancel').onclick = () => (chooser?.onCancel || resetToIdle)();
+  $('prCancel').onclick = () => (propChooser?.onCancel || resetToIdle)();
+
+  // enrollment
+  const enrollTap = serial => {
+    if (findPlayer(serial)) { toast(findPlayer(serial).name + ' is already enrolled'); return; }
+    if (serial in state.deeds) { toast('That sticker is ' + PROPERTIES[state.deeds[serial]].n); return; }
+    pendingCard = serial;
+    $('newCardId').textContent = serial;
+    $('nameInput').value = '';
+    const used = new Set(state.players.map(p => p.color));
+    const free = TOKEN_COLORS.findIndex(c => !used.has(c));
+    [...sw.children].forEach((b, i) => b.setAttribute('aria-pressed', String(i === Math.max(free, 0))));
+    show('name');
+    $('nameInput').focus();
+  };
+  $('enrollBtn').onclick = async () => {
+    await keepAwake();
+    if (nfcSupported){
+      await startScanning();
+      onTap = enrollTap;
+      toast('Hold a card to the back of the phone');
+    } else {
+      enrollTap(fakeSerial());
+    }
+  };
+  $('saveNameBtn').onclick = () => {
+    const name = $('nameInput').value.trim();
+    if (!name){ toast('Give the player a name'); return; }
+    const chosen = [...sw.children].find(b => b.getAttribute('aria-pressed') === 'true');
+    const color = TOKEN_COLORS[[...sw.children].indexOf(chosen)] || TOKEN_COLORS[0];
+    state.players.push({ id: pendingCard, name, color });
+    pendingCard = null; save();
+    toast(name + ' enrolled. Tap the next card.');
+    show('setup');
+    onTap = enrollTap;        // keep enrolling card after card
+  };
+
+  $('deedSetupBtn').onclick = async () => { await keepAwake(); await startScanning(); openDeedSetup(); };
+  $('dsTarget').onclick = () => nfcSupported ? (scanning ? toast('Hold the sticker to the phone') : startScanning()) : deedSetupTap(fakeSerial());
+  $('dsSkip').onclick = () => { dsIdx = (dsIdx + 1) % PROPERTIES.length; renderDeedSetup(); };
+  $('dsPrev').onclick = () => { dsIdx = (dsIdx + PROPERTIES.length - 1) % PROPERTIES.length; renderDeedSetup(); };
+
+  $('openBankBtn').onclick = async () => {
+    state.open = true; save();
+    await keepAwake();
+    await startScanning();
+    resetToIdle();
+  };
+  $('newGameBtn').onclick = () => {
+    if (state.ledger.length && !confirm('Start a new game? Every balance and deed goes back to the start.')) return;
+    state.ledger = []; state.open = false; invalidate(); save();
+    toast('New game. Everyone is back to $1,500.');
+    renderAll();
+  };
+  $('standingsBtn').onclick = () => show('standings');
+
+  // player actions
+  $('passGoBtn').onclick = () => {
+    post(BANK, activePlayer.id, 200, 'Passed GO');
+    toast(activePlayer.name + ' collected $200');
+    resetToIdle();
+  };
+  const ACTS = { collect: collectFlow, pay: payBankFlow, payplayer: payPlayerFlow, payrent: payRentFlow, buy: buyFlow, mine: myDeedsFlow };
+  document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACTS[b.dataset.act]());
+
+  // tap targets: on a phone they (re)start scanning; elsewhere they stand in for a tap
+  $('tapTarget').onclick = () => {
+    if (!nfcSupported) { toast('No NFC here. Pick a player from the list.'); return; }
+    if (!scanning) startScanning(); else toast('Hold a card or deed to the back of the phone');
+  };
+  $('chTarget').onclick = () => {
+    if (nfcSupported && !scanning) startScanning();
+    else toast(nfcSupported ? 'Hold the card to the phone' : 'No NFC here. Pick from the list.');
+  };
+
+  $('undoBtn').onclick = () => {
+    const last = state.ledger.pop();
+    invalidate(); save();
+    if (last) toast('Undid: ' + last.note + (last.amount ? ' · ' + money(last.amount) : ''));
+    renderAll();
+  };
+
+  document.querySelectorAll('[data-back]').forEach(b => b.onclick = () => {
+    if (b.dataset.back === 'idle') resetToIdle(); else show(b.dataset.back);
+  });
+  document.querySelectorAll('footer button').forEach(b => b.onclick = () => {
+    const nav = b.dataset.nav;
+    if (nav === 'deeds') chooseProperty({ title: 'Deeds', hint: 'Tap a deed sticker or pick one to see it.', onPick: openDeed, onCancel: resetToIdle, nav: 'deeds' });
+    else if (nav === 'idle') resetToIdle();
+    else show(nav);
+  });
+
+  if (state.open && state.players.length){
+    resetToIdle();
+    keepAwake().then(startScanning);
+  } else {
+    show('setup');
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
