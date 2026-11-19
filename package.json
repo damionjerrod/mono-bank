@@ -1,0 +1,9 @@
+{
+  "name": "mono-bank",
+  "private": true,
+  "description": "Monopoly bank terminal (single index.html). npm is only for tests.",
+  "scripts": {
+    "test": "node tests/nfc-flow.test.js index.html && node tests/no-nfc.test.js index.html && node tests/collapse.test.js index.html && node tests/token.test.js index.html"
+  },
+  "devDependencies": { "jsdom": "^24.0.0" }
+}

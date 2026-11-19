@@ -1,0 +1,26 @@
+// No-NFC smoke test (desktop / iPhone browsers): every flow must work from on-screen lists.
+const { JSDOM, VirtualConsole } = require('jsdom'); const fs = require('fs'); const assert = require('assert');
+const html = fs.readFileSync(process.argv[2], 'utf8').replace(/<link[^>]+fonts[^>]*>/g, '');
+const errs = []; const vc = new VirtualConsole(); vc.on('jsdomError', e => errs.push(e.message));
+const dom = new JSDOM(html, { runScripts:'dangerously', virtualConsole: vc, url:'https://example.test/', beforeParse(w){ w.scrollTo=()=>{}; w.confirm=()=>true; }});
+const w = dom.window, d = w.document, ev = s => w.eval(s);
+const tick = () => new Promise(r => setTimeout(r, 0));
+const click = async el => { (typeof el === 'string' ? d.querySelector(el) : el).click(); await tick(); };
+const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.includes(t));
+(async () => {
+  assert.match(d.querySelector('#nfcNotice').textContent, /No NFC/);
+  for (const n of ['Ann','Ben']) { await click('#enrollBtn'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); }
+  await click('#deedSetupBtn'); for (let i=0;i<3;i++) await click('#dsTarget');
+  assert.equal(ev('Object.keys(state.deeds).length'), 3);
+  await click('section[data-view="deedsetup"] [data-back="setup"]');
+  await click('#openBankBtn'); assert.equal(ev('current'), 'idle');
+  await click(byText('#idleRoster li', 'Ann')); assert.equal(ev('current'), 'player');
+  await click('[data-act="buy"]'); await click(byText('#propList button', 'Boardwalk')); await click('#amtConfirm');
+  await click(byText('#idleRoster li', 'Ben')); await click('[data-act="payrent"]'); await click(byText('#propList button', 'Boardwalk'));
+  assert.equal(d.querySelector('#amtDisplay').textContent, '$50'); await click('#amtConfirm');
+  assert.equal(ev("balanceOf(state.players[1].id)"), 1450);
+  await click('footer button[data-nav="deeds"]'); await click(byText('#propList button', 'Boardwalk'));
+  await click(byText('#dActions button', 'Charge rent')); await click(byText('#chList li', 'Ben')); await click('#amtConfirm');
+  assert.equal(ev("balanceOf(state.players[0].id)"), 1200);
+  assert.deepEqual(errs, []); console.log('NO-NFC PASS');
+})().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
