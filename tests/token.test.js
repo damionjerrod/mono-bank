@@ -24,7 +24,7 @@ const click = async sel => { d.querySelector(sel).click(); await tick(); };
   d.querySelector('#nameInput').value = 'Ben'; await click('#saveNameBtn');
   assert.equal(ev("state.players[0].token"), 'top-hat');
   assert.equal(ev("state.players[1].token"), undefined);
-  assert.match(d.querySelector('#setupRoster').textContent, /🎩 Ann/);
+  assert.match(d.querySelector('#enrollRoster').textContent, /🎩 Ann/);
   await tap('B2', 'Token: Race-Car');       // written later: picked up on the next tap
   assert.equal(ev("state.players[1].token"), 'race-car');
   await tap('C3', 'hello');                 // other text is ignored

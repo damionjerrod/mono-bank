@@ -302,7 +302,13 @@ footer button[data-active="true"]::before{background:var(--accent)}
 footer button:focus-visible{outline:2px solid var(--accent)}
 
 /* ---------- deeds, choosers, standings ---------- */
-.tap-target.small{min-height:160px;flex:none}
+.tap-target.small{min-height:190px;flex:none}
+/* Smaller targets get a shorter ripple so the rings stay inside their box. */
+.tap-target.small .tap-rings i{animation-name:ripple-sm}
+@keyframes ripple-sm{
+  0%{transform:scale(1);opacity:.6}
+  100%{transform:scale(1.65);opacity:0}
+}
 .chip.inline{display:inline-block;vertical-align:middle;width:12px;height:12px}
 .roster li.clickable{cursor:pointer}
 .roster li.clickable:hover{background:var(--surface-hi)}
@@ -415,16 +421,27 @@ h2.section{margin-top:14px}
   <!-- ═══ PLAYERS / SETUP ═══ -->
   <section class="view" data-view="setup">
     <h1>Players</h1>
-    <p class="hint">Tap each player's card to enroll them. Everyone starts with $1,500.</p>
-    <div id="nfcNotice"></div>
+    <p class="hint">Everyone starts with $1,500. Enroll each player's card, then open the bank.</p>
     <ul class="roster" id="setupRoster"></ul>
     <div class="stack">
-      <button class="btn" data-tone="primary" id="enrollBtn">Enroll a Card</button>
-      <button class="btn" id="deedShortcut" hidden>Register Deed Stickers<small id="deedShortcutSub"></small></button>
+      <button class="btn" data-tone="primary" id="enrollBtn">Enroll a Player</button>
       <button class="btn" data-tone="go" id="openBankBtn" disabled>Open the Bank</button>
       <button class="btn" id="standingsBtn">Standings<small>Net worth, best first</small></button>
       <button class="btn" data-tone="quiet" data-back="start">Main Menu</button>
     </div>
+  </section>
+
+  <!-- ═══ ENROLLING PLAYERS ═══ -->
+  <section class="view" data-view="enroll">
+    <h1>Enroll a Player</h1>
+    <p class="hint">Hold a player's card to the back of the phone. One card at a time, away from the others.</p>
+    <button class="tap-target small" id="enrollTarget">
+      <div class="tap-rings"><i></i><i></i><i></i></div>
+      <div class="tap-core"><span>Tap<br>card</span></div>
+    </button>
+    <div id="nfcNotice"></div>
+    <ul class="roster" id="enrollRoster"></ul>
+    <button class="btn" data-tone="primary" id="enrollDone">Done</button>
   </section>
 
   <!-- ═══ NAMING A NEW CARD ═══ -->
@@ -436,7 +453,7 @@ h2.section{margin-top:14px}
     <div class="swatches" id="swatches"></div>
     <div class="stack">
       <button class="btn" data-tone="primary" id="saveNameBtn">Save Player</button>
-      <button class="btn" data-tone="quiet" data-back="setup">Cancel</button>
+      <button class="btn" data-tone="quiet" id="nameCancel">Cancel</button>
     </div>
   </section>
 
@@ -917,7 +934,7 @@ function setLamp(on, text){
    4. VIEWS
    ════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
-const NAV_FOR = { start:null, idle:'idle', ledger:'ledger', setup:'setup', standings:'setup', deedsetup:'setup', name:'setup', settings:'settings' };
+const NAV_FOR = { start:null, enroll:'setup', idle:'idle', ledger:'ledger', setup:'setup', standings:'setup', deedsetup:'setup', name:'setup', settings:'settings' };
 let current = 'setup';
 let activePlayer = null;     // whose turn at the terminal
 let activeDeed = null;       // index of the deed on screen
@@ -976,7 +993,7 @@ function renderRoster(el, opts = {}){
   el.innerHTML = '';
   if (!state.players.length){
     el.innerHTML = '<li><div class="who"><b>No Players Yet</b>' +
-      '<small>Enroll a card to begin</small></div></li>';
+      '<small>Tap Enroll a Player to begin</small></div></li>';
     return;
   }
   for (const p of state.players){
@@ -985,7 +1002,7 @@ function renderRoster(el, opts = {}){
     const li = document.createElement('li');
     li.innerHTML = chip(p.color) +
       '<span class="who"><b></b><small></small></span>' +
-      '<span class="bal figure" data-broke="' + (bal < 0) + '">' + money(bal) + '</span>';
+      (opts.plain ? '' : '<span class="bal figure" data-broke="' + (bal < 0) + '">' + money(bal) + '</span>');
     li.querySelector('b').textContent = displayName(p);
     li.querySelector('small').textContent = opts.ids ? (p.token ? tokenLabel(p.token) + ' · ' : '') + p.id.slice(0, 20) : (n + (n === 1 ? ' deed' : ' deeds'));
     if (opts.onClick){
@@ -1182,12 +1199,13 @@ function renderAll(){
   const v = current;
   const nd = Object.keys(state.deeds).length;
   if (v === 'start') renderStart();
+  if (v === 'enroll') renderRoster($('enrollRoster'), { ids: true, plain: true });
   $('deedCount').textContent = nd + ' of 28 registered';
   if (v === 'setup'){
     renderRoster($('setupRoster'), { removable: true, ids: true });
-    $('deedShortcut').hidden = nd >= 28;
-    $('deedShortcutSub').textContent = nd + ' of 28 registered · also in Settings';
     $('openBankBtn').disabled = state.players.length < 2;
+    // One bright button at a time: Enroll until there are two players, then Open the Bank.
+    if (state.players.length < 2) $('enrollBtn').dataset.tone = 'primary'; else $('enrollBtn').removeAttribute('data-tone');
     $('openBankBtn').textContent = state.open ? 'Back to the Table' : 'Open the Bank';
   }
   if (v === 'idle') renderRoster($('idleRoster'), { onClick: openPlayer });
@@ -1460,7 +1478,7 @@ function boot(){
   load();
 
   $('nfcNotice').innerHTML = nfcSupported
-    ? '<div class="notice"><b>NFC Ready</b>Tap Enroll a Card, then hold a card against the back of the phone. ' +
+    ? '<div class="notice"><b>NFC Ready</b>Hold a card flat against the back of the phone until it beeps. ' +
       'Brand-new tags: write any record to each one once in the free NFC Tools app so Chrome reads them reliably.</div>'
     : '<div class="notice"><b>No NFC on This Browser</b>Web NFC needs Chrome on Android over HTTPS. ' +
       'Here, tapping the rings makes a stand-in card so you can try every flow.</div>';
@@ -1522,16 +1540,20 @@ function boot(){
     show('name');
     $('nameInput').focus();
   };
+  // The enroll screen listens for cards until Done; naming each one returns here.
+  const openEnroll = () => { show('enroll'); onTap = enrollTap; };
   $('enrollBtn').onclick = async () => {
     await keepAwake();
-    if (nfcSupported){
-      await startScanning();
-      onTap = enrollTap;
-      toast('Hold a card to the back of the phone');
-    } else {
-      enrollTap(fakeSerial());
-    }
+    if (nfcSupported) await startScanning();
+    openEnroll();
   };
+  // On a phone the rings (re)start scanning; elsewhere they make a stand-in card.
+  $('enrollTarget').onclick = () => {
+    if (!nfcSupported) { enrollTap(fakeSerial()); return; }
+    if (!scanning) startScanning(); else toast('Hold the card to the back of the phone');
+  };
+  $('enrollDone').onclick = () => show('setup');
+  $('nameCancel').onclick = () => { pendingCard = null; pendingToken = null; openEnroll(); };
   $('saveNameBtn').onclick = () => {
     const name = $('nameInput').value.trim();
     if (!name){ toast('Give the player a name'); return; }
@@ -1542,11 +1564,10 @@ function boot(){
     state.players.push(player);
     pendingCard = null; pendingToken = null; save();
     toast(name + ' enrolled. Tap the next card.');
-    show('setup');
-    onTap = enrollTap;        // keep enrolling card after card
+    openEnroll();             // keep enrolling card after card
   };
 
-  $('deedSetupBtn').onclick = $('deedShortcut').onclick = async () => { await keepAwake(); await startScanning(); openDeedSetup(); };
+  $('deedSetupBtn').onclick = async () => { await keepAwake(); await startScanning(); openDeedSetup(); };
   $('dsDone').onclick = () => show(dsReturn);
   $('dsTarget').onclick = () => nfcSupported ? (scanning ? toast('Hold the sticker to the phone') : startScanning()) : deedSetupTap(fakeSerial());
   $('dsSkip').onclick = () => { dsIdx = (dsIdx + 1) % PROPERTIES.length; renderDeedSetup(); };

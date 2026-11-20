@@ -34,7 +34,9 @@ function makeDom(){
   }
   assert.equal(ev('state.players.length'), 3);
   assert.notEqual(ev('state.players[0].color'), ev('state.players[1].color'));
-  await tap('A1'); assert.equal(view(), 'setup');
+  await tap('A1'); assert.equal(view(), 'enroll'); // already enrolled: stays put
+  assert.match(text('#nfcNotice'), /NFC Ready/);
+  await click('#enrollDone'); assert.equal(view(), 'setup');
 
   await click('#deedSetupBtn'); assert.equal(view(), 'deedsetup');
   await tap('A1'); assert.equal(ev('Object.keys(state.deeds).length'), 0);

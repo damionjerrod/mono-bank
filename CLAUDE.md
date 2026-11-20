@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v5` -> `bank-v6`...) whenever you change shipped files, so installed copies update.
+  (`bank-v6` -> `bank-v7`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -19,7 +19,8 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   owner loses enrolled cards and registered deed stickers. Add fields; don't rename them.
 
 ## How the code is laid out (index.html)
-- Views are `<section class="view" data-view="...">`: start (shown on launch), setup (Players tab), name (naming a new card),
+- Views are `<section class="view" data-view="...">`: start (shown on launch), setup (Players tab), enroll (tap rings for player
+  cards), name (naming a new card),
   deedsetup, idle (Bank tab), player, deed, amount, dice, choose, property, ledger, standings,
   settings (Settings tab).
   `show(name)` switches views.
@@ -33,8 +34,9 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   railroads by count, utilities 4x/10x the dice, mortgages with 10% interest.
 - Start screen: Continue Game (only if `state.open` or the ledger has entries), New Game (keeps
   players and deed stickers; confirms before ending a game in progress), and a Settings button.
-- Players tab: Enroll a Card, Register Deed Stickers (shortcut, hidden once all 28 are registered),
-  Open the Bank, Standings, Main Menu.
+- Players tab: Enroll a Player, Open the Bank, Standings, Main Menu. Enroll a Player opens the
+  enroll screen (tap rings, the NFC Ready / No NFC notice, who's enrolled so far, Done); naming a
+  card returns there so cards can be enrolled one after another. Deed stickers are only in Settings.
 - Settings tab: Theme (three looks), Setup (Register Deed Stickers), Game (Main Menu,
   Bank Collapse, which wipes everything after a confirm + typing COLLAPSE).
 - The tab bar only shows once the bank is open; before that, screens have their own back buttons.

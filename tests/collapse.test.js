@@ -8,7 +8,7 @@ const w = dom.window, d = w.document, ev = s => w.eval(s);
 const tick = () => new Promise(r => setTimeout(r, 0));
 const click = async sel => { d.querySelector(sel).click(); await tick(); };
 (async () => {
-  for (const n of ['Ann','Ben']) { await click('#enrollBtn'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); }
+  for (const n of ['Ann','Ben']) { await click('#enrollBtn'); await click('#enrollTarget'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); }
   await click('#deedSetupBtn'); for (let i=0;i<3;i++) await click('#dsTarget');
   await click('#dsDone');
   await click('#collapseBtn');

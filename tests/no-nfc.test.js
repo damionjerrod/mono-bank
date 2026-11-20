@@ -8,8 +8,11 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 const click = async el => { (typeof el === 'string' ? d.querySelector(el) : el).click(); await tick(); };
 const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.includes(t));
 (async () => {
+  await click('#enrollBtn'); assert.equal(ev('current'), 'enroll');
   assert.match(d.querySelector('#nfcNotice').textContent, /No NFC/);
-  for (const n of ['Ann','Ben']) { await click('#enrollBtn'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); }
+  for (const n of ['Ann','Ben']) { await click('#enrollTarget'); assert.equal(ev('current'), 'name'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); assert.equal(ev('current'), 'enroll'); }
+  assert.match(d.querySelector('#enrollRoster').textContent, /Ann[\s\S]*Ben/);
+  await click('#enrollDone'); assert.equal(ev('current'), 'setup');
   await click('#deedSetupBtn'); for (let i=0;i<3;i++) await click('#dsTarget');
   assert.equal(ev('Object.keys(state.deeds).length'), 3);
   await click('#dsDone'); assert.equal(ev('current'), 'setup');
