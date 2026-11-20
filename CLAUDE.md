@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v20` -> `bank-v21`...) whenever you change shipped files, so installed copies update.
+  (`bank-v21` -> `bank-v22`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -60,7 +60,10 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   sounds (`SOUNDS`) + vibration patterns (`VIBES`). `fxTap()` on every card/sticker read (rings
   pulse); `refuse(msg)` for refusals (message + low tone + long buzz + screen shake); `post()` shows
   the transaction overlay (`#fx`: check, amount, each player's balance counting to its new value;
-  Pass GO adds a burst); Bank Collapse rumbles and quakes the screen. Settings > Feedback has Sound
+  Pass GO adds a burst; counts for `FX_COUNT_MS`, then stays `FX_HOLD_MS` before closing); Bank
+  Collapse rumbles, quakes the screen and shows a blocking overlay with every player's total draining
+  to $0.00 (`COLLAPSE_COUNT_MS`, then `COLLAPSE_HOLD_MS`), then goes to the Main Menu. The overlay is
+  `showOverlay()`. Settings > Feedback has Sound
   and Vibration switches, stored per phone under `localStorage['monopoly-bank-fx']`.
 - Headings, button labels and screen titles are Title Case; hints, sub-labels, toasts and ledger
   notes stay sentence case. Exception: the Start screen buttons' sub-labels are Title Case too.

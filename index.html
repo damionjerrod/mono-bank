@@ -423,6 +423,12 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 .fx{position:fixed;inset:0;z-index:90;display:grid;place-items:center;pointer-events:none;
   background:color-mix(in srgb,var(--bg) 55%,transparent);opacity:0;transition:opacity .18s ease}
 .fx[data-show="true"]{opacity:1}
+.fx[data-block="true"]{pointer-events:auto}           /* Bank Collapse: nothing to tap behind it */
+.fx-check .ic-collapse{display:none}
+.fx[data-kind="collapse"] .fx-check{background:var(--neg);color:#fff}
+.fx[data-kind="collapse"] .fx-check .ic-check{display:none}
+.fx[data-kind="collapse"] .fx-check .ic-collapse{display:block;stroke-dashoffset:0}
+.fx[data-kind="collapse"] .fx-amt{font-size:26px;color:var(--neg)}
 .fx-card{position:relative;min-width:250px;max-width:86vw;background:var(--surface);color:var(--text);
   border-radius:24px;padding:22px 22px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);
   transform:scale(.86);transition:transform .25s cubic-bezier(.2,1.4,.4,1)}
@@ -752,7 +758,7 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 <div class="fx" id="fx" aria-hidden="true">
   <div class="fx-card">
     <div class="fx-burst" id="fxBurst"></div>
-    <div class="fx-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div class="fx-check"><svg class="ic-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="ic-collapse" viewBox="0 0 24 24"><path d="M3 6l7 7 4-4 7 7"/><path d="M21 11v5h-5"/></svg></div>
     <div class="fx-amt" id="fxAmt"></div>
     <div class="fx-note" id="fxNote"></div>
     <div class="fx-rows" id="fxRows"></div>
@@ -1114,22 +1120,31 @@ function refuse(msg){ toast(msg); feel('error'); replayClass(activeView(), 'shak
 // Count a number on screen from one value to another.
 const raf = window.requestAnimationFrame ? f => window.requestAnimationFrame(f) : f => setTimeout(() => f(Date.now()), 16);
 const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function countTo(el, from, to, ms = 650){
-  if (reduceMotion() || from === to) { el.textContent = money(to); return; }
+const moneyCents = n => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function countTo(el, from, to, ms = 650, fmt = money){
+  if (reduceMotion() || from === to) { el.textContent = fmt(to); return; }
   const t0 = Date.now();
   const step = () => {
     const k = Math.min(1, (Date.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
-    el.textContent = money(Math.round(from + (to - from) * e));
+    el.textContent = fmt(fmt === money ? Math.round(from + (to - from) * e) : from + (to - from) * e);
     if (k < 1) raf(step);
   };
   step();
 }
 
 // The transaction overlay: a check, the amount, and each player's balance counting to its new value.
+// Timing: the balances start counting shortly after the overlay appears, count for FX_COUNT_MS,
+// then the overlay stays up FX_HOLD_MS so the new numbers can be read before it closes.
+const FX_START_MS = 250, FX_COUNT_MS = 1000, FX_HOLD_MS = 2000;
+const COLLAPSE_COUNT_MS = 1800, COLLAPSE_HOLD_MS = 2000;
+const COLLAPSE_TOTAL_MS = FX_START_MS + COLLAPSE_COUNT_MS + COLLAPSE_HOLD_MS + 250;
 let fxTimer = null;
-function showTransaction({ amount, note, rows, kind }){
+const showTransaction = opts => showOverlay(opts);
+function showOverlay({ amount, title, note, rows, kind, countMs = FX_COUNT_MS, holdMs = FX_HOLD_MS, fmt = money, block = false, onDone = null }){
   const box = $('fx');
-  $('fxAmt').textContent = amount ? money(amount) : '';
+  box.dataset.kind = kind;
+  box.dataset.block = String(block);
+  $('fxAmt').textContent = title || (amount ? money(amount) : '');
   $('fxNote').textContent = note || '';
   const list = $('fxRows'); list.innerHTML = '';
   rows.forEach(r => {
@@ -1138,9 +1153,9 @@ function showTransaction({ amount, note, rows, kind }){
     row.querySelector('.n').textContent = r.name;
     const v = row.querySelector('.v');
     v.dataset.dir = r.to > r.from ? 'up' : r.to < r.from ? 'down' : '';
-    v.textContent = money(r.from);
+    v.textContent = fmt(r.from);
     list.appendChild(row);
-    setTimeout(() => countTo(v, r.from, r.to), 180);
+    setTimeout(() => countTo(v, r.from, r.to, countMs, fmt), FX_START_MS);
   });
   const burst = $('fxBurst'); burst.className = 'fx-burst'; burst.innerHTML = '';
   if (kind === 'passgo'){
@@ -1157,7 +1172,12 @@ function showTransaction({ amount, note, rows, kind }){
   }
   box.dataset.show = 'true';
   clearTimeout(fxTimer);
-  fxTimer = setTimeout(() => { box.dataset.show = 'false'; }, kind === 'passgo' ? 1700 : 1400);
+  // With balances to count: close FX_HOLD_MS after the count ends. Without: a short look is enough.
+  const closeAt = rows.length ? FX_START_MS + countMs + holdMs : 1600;
+  fxTimer = setTimeout(() => {
+    box.dataset.show = 'false'; box.dataset.block = 'false';
+    if (onDone) setTimeout(onDone, 200);
+  }, closeAt);
   feel(kind);
 }
 
@@ -1887,11 +1907,14 @@ function boot(){
     if (!confirm('BANK COLLAPSE\n\nThe bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.')) return;
     const typed = prompt('To confirm, type COLLAPSE');
     if ((typed || '').trim().toUpperCase() !== 'COLLAPSE'){ toast('Crisis averted. Nothing was wiped.'); return; }
+    // Everyone's money drains to $0.00 on screen; the game itself is wiped straight away.
+    const rows = state.players.map(p => ({ name: p.name, from: balanceOf(p.id), to: 0 }));
     state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
     invalidate(); save();
-    toast('The bank has collapsed. Enroll cards to start a new economy.');
-    feel('collapse'); replayClass(document.body, 'quake');
-    show('start');            // nothing left to continue
+    replayClass(document.body, 'quake');
+    showOverlay({ kind: 'collapse', title: 'Bank Collapse', note: rows.length ? 'Every account is wiped out' : 'Nothing left in the vault',
+      rows, fmt: moneyCents, countMs: COLLAPSE_COUNT_MS, holdMs: COLLAPSE_HOLD_MS, block: true,
+      onDone: () => { show('start'); toast('The bank has collapsed. Enroll cards to start a new economy.'); } });
   };
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
   document.querySelector('meta[name="theme-color"]').setAttribute('content', LOOK_BG[currentLook()] || LOOK_BG.a);
