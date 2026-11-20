@@ -35,7 +35,7 @@ function makeDom(){
   assert.equal(ev('state.players.length'), 3);
   assert.notEqual(ev('state.players[0].color'), ev('state.players[1].color'));
   await tap('A1'); assert.equal(view(), 'enroll'); // already enrolled: stays put
-  assert.match(text('#nfcNotice'), /NFC Ready/);
+  assert.equal(text('#nfcNotice'), '', 'no notice when NFC works');
   await click('#enrollDone'); assert.equal(view(), 'setup');
 
   await click('#deedSetupBtn'); assert.equal(view(), 'deedsetup');
@@ -146,9 +146,10 @@ function makeDom(){
   await click('#continueBtn'); assert.equal(view(), 'idle');
   assert.equal(ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})'), snap);
 
-  await click('footer button[data-nav="setup"]'); await click('#standingsBtn');
+  await click('footer button[data-nav="ledger"]'); await click('#standingsBtn'); assert.equal(view(), 'standings');
   console.log([...d.querySelectorAll('#standList li')].map(li => li.textContent).join('\n'));
-  await click('section[data-view="standings"] [data-back="setup"]');
+  await click('#ledgerSegBtn'); assert.equal(view(), 'ledger');
+  await click('footer button[data-nav="setup"]');
   await click('section[data-view="setup"] [data-back="start"]'); assert.equal(view(), 'start');
   await click('#newGameBtn'); assert.equal(view(), 'setup');
   assert.equal(ev('state.ledger.length'), 0);

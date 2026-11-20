@@ -34,6 +34,8 @@ try { var l = localStorage.getItem('monopoly-bank-look'); if (/^[abc]$/.test(l))
   --muted:#8B909A;
   --accent:#3DDC97;
   --on-accent:#06140D;
+  --go:#3DDC97;
+  --on-go:#06140D;
   --accent-soft:#1C2A24;
   --pos:#3DDC97;
   --neg:#FF6B6B;
@@ -52,6 +54,8 @@ try { var l = localStorage.getItem('monopoly-bank-look'); if (/^[abc]$/.test(l))
   --muted:#6E7076;
   --accent:#E2382E;
   --on-accent:#FFFFFF;
+  --go:#14834C;
+  --on-go:#FFFFFF;
   --accent-soft:#FCE9E7;
   --pos:#1A9658;
   --neg:#D2302A;
@@ -70,6 +74,8 @@ try { var l = localStorage.getItem('monopoly-bank-look'); if (/^[abc]$/.test(l))
   --muted:#959CCB;
   --accent:#FFC94D;
   --on-accent:#1A1400;
+  --go:#4ADE80;
+  --on-go:#052E16;
   --accent-soft:#2B2C4A;
   --pos:#4ADE80;
   --neg:#FB7185;
@@ -196,8 +202,9 @@ button.btn:hover{background:var(--surface-hi)}
 button.btn:active{transform:scale(.98)}
 button.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.btn small{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:2px}
-button.btn[data-tone="primary"],
-button.btn[data-tone="go"]{background:var(--accent);color:var(--on-accent);text-align:center;box-shadow:none}
+button.btn[data-tone="primary"]{background:var(--accent);color:var(--on-accent);text-align:center;box-shadow:none}
+/* "go" = money or the game moving forward: always green, whatever the look's accent is */
+button.btn[data-tone="go"]{background:var(--go);color:var(--on-go);text-align:center;box-shadow:none}
 button.btn[data-tone="primary"] small,
 button.btn[data-tone="go"] small{color:inherit;opacity:.75}
 button.btn[data-tone="quiet"]{background:none;box-shadow:none;color:var(--muted);text-align:center}
@@ -317,7 +324,7 @@ footer button:focus-visible{outline:2px solid var(--accent)}
   width:32px;height:32px;font-size:18px;line-height:1;cursor:pointer;flex:none}
 .props button[data-current="true"]{box-shadow:inset 0 0 0 2px var(--accent)}
 .props .empty{color:var(--muted);font-size:14px;padding:8px}
-#presetRow:empty{display:none}
+#presetRow:empty,#nfcNotice:empty{display:none}
 .deedcard{background:var(--surface);color:var(--text);border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
 .deedcard .band{padding:20px 16px;font-weight:700;font-size:20px;letter-spacing:-.01em;text-align:center}
 .deedcard .body{padding:16px 16px 12px;text-align:center}
@@ -384,6 +391,13 @@ body[data-chrome="off"] footer{display:none}
 .start-actions button.btn small{font-size:13.5px}
 h2.section{margin-top:14px}
 
+/* Ledger / Standings switch */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
+.seg button{border:none;background:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;
+  padding:10px;border-radius:10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface-hi);color:var(--text)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
 @media (prefers-reduced-motion:reduce){
   .tap-rings i{animation:none;opacity:.3}
   *{transition-duration:.01ms !important}
@@ -424,16 +438,15 @@ h2.section{margin-top:14px}
     <p class="hint">Everyone starts with $1,500. Enroll each player's card, then open the bank.</p>
     <ul class="roster" id="setupRoster"></ul>
     <div class="stack">
-      <button class="btn" data-tone="primary" id="enrollBtn">Enroll a Player</button>
+      <button class="btn" data-tone="primary" id="enrollBtn">Enroll Players</button>
       <button class="btn" data-tone="go" id="openBankBtn" disabled>Open the Bank</button>
-      <button class="btn" id="standingsBtn">Standings<small>Net worth, best first</small></button>
       <button class="btn" data-tone="quiet" data-back="start">Main Menu</button>
     </div>
   </section>
 
   <!-- ═══ ENROLLING PLAYERS ═══ -->
   <section class="view" data-view="enroll">
-    <h1>Enroll a Player</h1>
+    <h1>Enroll Players</h1>
     <p class="hint">Hold a player's card to the back of the phone. One card at a time, away from the others.</p>
     <button class="tap-target small" id="enrollTarget">
       <div class="tap-rings"><i></i><i></i><i></i></div>
@@ -493,7 +506,7 @@ h2.section{margin-top:14px}
       <div class="sub" id="pSub">Available Balance</div>
       <div class="amount figure" id="pBal"></div>
     </div>
-    <button class="btn" data-tone="go" id="passGoBtn">Pass GO<small>+$200</small></button>
+    <button class="btn" data-tone="primary" id="passGoBtn">Pass GO<small>+$200</small></button>
     <div class="grid2">
       <button class="btn tile wide" data-act="payrent"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg></span><span><b>Pay Rent</b><small>Tap the deed they landed on</small></span></button>
       <button class="btn tile" data-act="collect"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span><span><b>Collect</b><small>From the bank</small></span></button>
@@ -568,6 +581,7 @@ h2.section{margin-top:14px}
   <!-- ═══ LEDGER ═══ -->
   <section class="view" data-view="ledger">
     <h1>Ledger</h1>
+    <div class="seg"><button aria-pressed="true">Ledger</button><button id="standingsBtn" aria-pressed="false">Standings</button></div>
     <p class="hint" id="ledgerHint">Every move, newest first.</p>
     <ul class="ledger" id="ledgerList"></ul>
     <div class="stack">
@@ -612,9 +626,9 @@ h2.section{margin-top:14px}
   <!-- ═══ STANDINGS ═══ -->
   <section class="view" data-view="standings">
     <h1>Standings</h1>
-    <p class="hint">Cash, plus deeds at printed price (half if mortgaged), plus what the buildings cost.</p>
+    <div class="seg"><button id="ledgerSegBtn" aria-pressed="false">Ledger</button><button aria-pressed="true">Standings</button></div>
+    <p class="hint">Net worth, best first: cash, plus deeds at printed price (half if mortgaged), plus what the buildings cost.</p>
     <ul class="roster" id="standList"></ul>
-    <button class="btn" data-tone="quiet" data-back="setup">Back</button>
   </section>
 
 </main>
@@ -934,7 +948,7 @@ function setLamp(on, text){
    4. VIEWS
    ════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
-const NAV_FOR = { start:null, enroll:'setup', idle:'idle', ledger:'ledger', setup:'setup', standings:'setup', deedsetup:'setup', name:'setup', settings:'settings' };
+const NAV_FOR = { start:null, enroll:'setup', idle:'idle', ledger:'ledger', setup:'setup', standings:'ledger', deedsetup:'setup', name:'setup', settings:'settings' };
 let current = 'setup';
 let activePlayer = null;     // whose turn at the terminal
 let activeDeed = null;       // index of the deed on screen
@@ -993,7 +1007,7 @@ function renderRoster(el, opts = {}){
   el.innerHTML = '';
   if (!state.players.length){
     el.innerHTML = '<li><div class="who"><b>No Players Yet</b>' +
-      '<small>Tap Enroll a Player to begin</small></div></li>';
+      '<small>Tap Enroll Players to begin</small></div></li>';
     return;
   }
   for (const p of state.players){
@@ -1132,7 +1146,7 @@ function renderDeed(){
     grid.append(addH, selH);
     addH.disabled = s.houses >= 5; selH.disabled = s.houses === 0;
   }
-  if (s.mortgaged) add('Lift Mortgage', 'Pay ' + money(unmortgageCost(p)) + ' (includes 10%)', () => unmortgage(i), 'go');
+  if (s.mortgaged) add('Lift Mortgage', 'Pay ' + money(unmortgageCost(p)) + ' (includes 10%)', () => unmortgage(i), 'primary');
   else add('Mortgage', 'Bank pays ' + nameOf(s.owner) + ' ' + money(mortgageValue(p)), () => mortgage(i));
   add('Hand Over This Deed', 'A trade, or a bankrupt player giving it up', () => transferFlow(i));
 }
@@ -1204,8 +1218,6 @@ function renderAll(){
   if (v === 'setup'){
     renderRoster($('setupRoster'), { removable: true, ids: true });
     $('openBankBtn').disabled = state.players.length < 2;
-    // One bright button at a time: Enroll until there are two players, then Open the Bank.
-    if (state.players.length < 2) $('enrollBtn').dataset.tone = 'primary'; else $('enrollBtn').removeAttribute('data-tone');
     $('openBankBtn').textContent = state.open ? 'Back to the Table' : 'Open the Bank';
   }
   if (v === 'idle') renderRoster($('idleRoster'), { onClick: openPlayer });
@@ -1477,9 +1489,8 @@ const fakeSerial = () => 'DEMO-' + Math.random().toString(16).slice(2, 10).toUpp
 function boot(){
   load();
 
-  $('nfcNotice').innerHTML = nfcSupported
-    ? '<div class="notice"><b>NFC Ready</b>Hold a card flat against the back of the phone until it beeps. ' +
-      'Brand-new tags: write any record to each one once in the free NFC Tools app so Chrome reads them reliably.</div>'
+  // Only browsers without NFC get a notice, explaining the stand-in cards.
+  $('nfcNotice').innerHTML = nfcSupported ? ''
     : '<div class="notice"><b>No NFC on This Browser</b>Web NFC needs Chrome on Android over HTTPS. ' +
       'Here, tapping the rings makes a stand-in card so you can try every flow.</div>';
 
@@ -1603,6 +1614,7 @@ function boot(){
     renderAll();
   };
   $('standingsBtn').onclick = () => show('standings');
+  $('ledgerSegBtn').onclick = () => show('ledger');
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
   document.querySelector('meta[name="theme-color"]').setAttribute('content', LOOK_BG[currentLook()] || LOOK_BG.a);
 
