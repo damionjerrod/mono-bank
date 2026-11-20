@@ -157,9 +157,8 @@ function makeDom(){
   await click('#amtCancel'); assert.equal(view(), 'idle');
   await tap('A1'); assert.equal(view(), 'player', 'a card tap still opens the player');
   await click('section[data-view="player"] [data-back="idle"]');
-  await click('[data-go="ledger"]'); await click('#standingsBtn'); assert.equal(view(), 'standings');
+  await click('[data-go="standings"]'); assert.equal(view(), 'standings');
   console.log([...d.querySelectorAll('#standList li')].map(li => li.textContent).join('\n'));
-  await click('#ledgerSegBtn'); assert.equal(view(), 'ledger');
   await click('section[data-view="standings"] [data-back="idle"]'); assert.equal(view(), 'idle');
   await click('[data-go="players"]'); assert.equal(view(), 'players');
   assert.match(text('#playersRoster'), /Ann[\s\S]*Ben[\s\S]*Cal/);

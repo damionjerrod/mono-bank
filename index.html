@@ -393,12 +393,6 @@ h2.section{margin-top:14px}
 button.tile[data-tone="primary"]{text-align:left}
 button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 
-/* Ledger / Standings switch */
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
-.seg button{border:none;background:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;
-  padding:10px;border-radius:10px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface-hi);color:var(--text)}
-.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 
 @media (prefers-reduced-motion:reduce){
   .tap-rings i{animation:none;opacity:.3}
@@ -505,7 +499,8 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
     <nav class="menu">
       <button data-go="players"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></span><span class="txt"><b>Players</b><small>Balances, rent, trades and deeds</small></span><span class="chev">›</span></button>
       <button data-go="deeds"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="7" width="12" height="14" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/></svg></span><span class="txt"><b>Deeds</b><small>Rent, houses and mortgages</small></span><span class="chev">›</span></button>
-      <button data-go="ledger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span><span class="txt"><b>Ledger</b><small>Every transaction, undo and standings</small></span><span class="chev">›</span></button>
+      <button data-go="ledger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span><span class="txt"><b>Ledger</b><small>Every transaction and undo</small></span><span class="chev">›</span></button>
+      <button data-go="standings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 20V11"/><path d="M12 20V5"/><path d="M18 20v-6"/></svg></span><span class="txt"><b>Standings</b><small>Net worth, best first</small></span><span class="chev">›</span></button>
       <button data-go="settings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg></span><span class="txt"><b>Settings</b><small>Theme, deed stickers and main menu</small></span><span class="chev">›</span></button>
     </nav>
   </section>
@@ -601,7 +596,6 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
   <!-- ═══ LEDGER ═══ -->
   <section class="view" data-view="ledger">
     <h1>Ledger</h1>
-    <div class="seg"><button aria-pressed="true">Ledger</button><button id="standingsBtn" aria-pressed="false">Standings</button></div>
     <p class="hint" id="ledgerHint">Every move, newest first.</p>
     <ul class="ledger" id="ledgerList"></ul>
     <div class="stack">
@@ -647,7 +641,6 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
   <!-- ═══ STANDINGS ═══ -->
   <section class="view" data-view="standings">
     <h1>Standings</h1>
-    <div class="seg"><button id="ledgerSegBtn" aria-pressed="false">Ledger</button><button aria-pressed="true">Standings</button></div>
     <p class="hint">Net worth, best first: cash, plus deeds at printed price (half if mortgaged), plus what the buildings cost.</p>
     <ul class="roster" id="standList"></ul>
     <button class="btn" data-tone="quiet" data-back="idle">Back</button>
@@ -1644,8 +1637,6 @@ function boot(){
     toast('The bank has collapsed. Enroll cards to start a new economy.');
     renderAll();
   };
-  $('standingsBtn').onclick = () => show('standings');
-  $('ledgerSegBtn').onclick = () => show('ledger');
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
   document.querySelector('meta[name="theme-color"]').setAttribute('content', LOOK_BG[currentLook()] || LOOK_BG.a);
 
