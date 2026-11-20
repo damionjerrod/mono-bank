@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v12` -> `bank-v13`...) whenever you change shipped files, so installed copies update.
+  (`bank-v13` -> `bank-v14`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -36,7 +36,8 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   players, ledger and `open`; keeps registered deed stickers, which are system setup; confirms first
   if there are players or a game), and a Settings button.
 - There is no tab bar. The Bank screen is the hub: four action buttons, then rows (`data-go`) for
-  Players, Deeds, Ledger, Standings and Settings. Every other screen has its own Back button.
+  Players, Deeds, Ledger, Standings and Settings, then Bank Collapse (wipes everything after a
+  confirm + typing COLLAPSE, then returns to the Start screen). Every other screen has its own Back button.
 - Players screen: the player list with balances (tap a card or name for the player screen) and a
   Manage Players button, which opens the setup screen.
 - Manage Players (setup): Enroll Players, Open the Bank (always green, `data-tone="go"` / `--go`),
@@ -48,8 +49,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   `bankAction()`). Each asks "who?" via `choosePlayer` (tap a card or pick), then runs the flow;
   cancelling goes back to the Bank screen (`fromBank`). Tapping a player card on the Bank, Players,
   player, deed, ledger or standings screens opens that player; a deed sticker opens the deed.
-- Settings: Theme (three looks), Setup (Register Deed Stickers), Game (Main Menu, Bank Collapse,
-  which wipes everything after a confirm + typing COLLAPSE), and Back to wherever it was opened.
+- Settings: Theme (three looks), Setup (Register Deed Stickers), Game (Main Menu), and Back to wherever it was opened.
 - Headings, button labels and screen titles are Title Case; hints, sub-labels, toasts and ledger
   notes stay sentence case. Exception: the Start screen buttons' sub-labels are Title Case too.
 

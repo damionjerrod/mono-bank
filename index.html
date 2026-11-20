@@ -503,6 +503,7 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
       <button data-go="standings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 20V11"/><path d="M12 20V5"/><path d="M18 20v-6"/></svg></span><span class="txt"><b>Standings</b><small>Net worth, best first</small></span><span class="chev">›</span></button>
       <button data-go="settings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg></span><span class="txt"><b>Settings</b><small>Theme, deed stickers and main menu</small></span><span class="chev">›</span></button>
     </nav>
+    <button class="btn" data-tone="danger" id="collapseBtn">Bank Collapse<small>Wipes everything: players, deed stickers, the whole game</small></button>
   </section>
 
   <!-- ═══ PLAYERS (overview) ═══ -->
@@ -633,7 +634,6 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
     <h2 class="section">Game</h2>
     <div class="stack">
       <button class="btn" id="menuBtn" data-back="start">Main Menu<small>Continue or start a new game</small></button>
-      <button class="btn" data-tone="danger" id="collapseBtn">Bank Collapse<small>Wipes everything: players, deed stickers, the whole game</small></button>
     </div>
     <button class="btn" data-tone="quiet" id="settingsBack">Back</button>
   </section>
@@ -1635,7 +1635,7 @@ function boot(){
     state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
     invalidate(); save();
     toast('The bank has collapsed. Enroll cards to start a new economy.');
-    renderAll();
+    show('start');            // nothing left to continue
   };
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
   document.querySelector('meta[name="theme-color"]').setAttribute('content', LOOK_BG[currentLook()] || LOOK_BG.a);

@@ -18,6 +18,7 @@ const click = async sel => { d.querySelector(sel).click(); await tick(); };
   assert.equal(ev('state.players.length'), 0);
   assert.equal(ev('Object.keys(state.deeds).length'), 0);
   assert.equal(ev('state.ledger.length'), 0);
+  assert.equal(ev('current'), 'start', 'collapse returns to the Start screen');
   assert.equal(JSON.parse(w.localStorage.getItem('monopoly-bank')).players.length, 0);
   assert.deepEqual(errs, []); console.log('COLLAPSE PASS');
 })().catch(e => { console.error('FAIL', e.stack); process.exit(1); });
