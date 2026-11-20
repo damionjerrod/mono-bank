@@ -12,6 +12,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
+// A refresh always lands on the Main Menu at the top, so don't let the browser restore an old scroll.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 // Apply the saved look before first paint so the screen never flashes the default.
 try { var l = localStorage.getItem('monopoly-bank-look'); if (/^[abc]$/.test(l)) document.documentElement.dataset.look = l; } catch(e){}
 </script>
@@ -87,8 +89,10 @@ try { var l = localStorage.getItem('monopoly-bank-look'); if (/^[abc]$/.test(l))
 :root{ --r:18px; --r-sm:12px; --pad:16px; }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%}
-body{
+/* Size the page to the visible area. 100dvh followed the address bar, so a refresh while the
+   bar was briefly hidden made the page taller than the screen and gave it a scroll. */
+html{height:100%}
+body{margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:var(--font);
@@ -97,7 +101,7 @@ body{
   overscroll-behavior:none;
   display:flex;
   flex-direction:column;
-  min-height:100dvh;
+  min-height:100%;
   transition:background-color .2s ease,color .2s ease;
 }
 button{font-family:inherit}
