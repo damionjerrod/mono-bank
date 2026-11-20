@@ -492,6 +492,7 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 .modal[data-open="true"] .modal-card{transform:scale(1)}
 .modal-card .fx-check{background:var(--neg);color:#fff}
 .modal-card .fx-check svg{stroke-dashoffset:0}
+.modal-card .kicker{font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .modal-card h2{font-size:24px;font-weight:700;color:var(--neg);margin:0 0 8px;letter-spacing:-.01em}
 .modal-card p{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.45}
 .hold{position:relative;overflow:hidden;width:100%;border:none;border-radius:var(--r);padding:18px;
@@ -501,7 +502,8 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 .hold .fill{position:absolute;inset:0;background:var(--neg);transform:scaleX(0);transform-origin:left;
   transition:transform .25s ease-out}
 .hold[data-holding="true"] .fill{transform:scaleX(1);transition:transform var(--hold-ms,2000ms) linear}
-.hold .lbl{position:relative;transition:color .2s ease}
+.hold .lbl{position:relative;display:block;transition:color .2s ease}
+.hold .lbl small{display:block;font-size:12.5px;font-weight:600;opacity:.8;margin-top:2px}
 .hold[data-holding="true"] .lbl{color:#fff}
 .hold:focus-visible{outline:2px solid var(--neg);outline-offset:2px}
 .hold-hint{display:block;margin-top:8px;font-size:13px;color:var(--muted);min-height:18px}
@@ -783,10 +785,11 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 <div class="modal" id="collapseModal" data-open="false" role="dialog" aria-modal="true" aria-labelledby="collapseTitle">
   <div class="modal-card">
     <div class="fx-check"><svg viewBox="0 0 24 24"><path d="M3 6l7 7 4-4 7 7"/><path d="M21 11v5h-5"/></svg></div>
+    <div class="kicker">Run on the Bank</div>
     <h2 id="collapseTitle">Bank Collapse</h2>
-    <p>The bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.</p>
-    <button class="hold" id="collapseHold" data-holding="false"><span class="fill"></span><span class="lbl">Collapse</span></button>
-    <span class="hold-hint" id="collapseHint">Press and hold to collapse</span>
+    <p>Everyone rushes to withdraw at once and the bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.</p>
+    <button class="hold" id="collapseHold" data-holding="false"><span class="fill"></span><span class="lbl">Collapse<small>Run on the Bank</small></span></button>
+    <span class="hold-hint" id="collapseHint">Press and hold to start the run</span>
     <button class="btn" data-tone="quiet" id="collapseCancel">Cancel</button>
   </div>
 </div>
@@ -1955,12 +1958,28 @@ function boot(){
     if (buzzLoop) { clearInterval(buzzLoop); buzzLoop = null; }
     try { navigator.vibrate && navigator.vibrate(0); } catch(err){}
   };
+  // The screen trembles while the button is held, harder as the fill advances, and stops at the crash.
+  let shakeLoop = null, shakeStart = 0;
+  const SHAKE_MAX_PX = 11, SHAKE_MAX_DEG = 1.2;
+  const startShake = () => {
+    if (reduceMotion()) return;
+    shakeStart = Date.now();
+    shakeLoop = setInterval(() => {
+      const k = Math.min(1, (Date.now() - shakeStart) / COLLAPSE_HOLD_MS_PRESS);
+      const amp = 1 + k * k * (SHAKE_MAX_PX - 1);          // gentle at first, violent near the end
+      const r = () => (Math.random() * 2 - 1);
+      document.body.style.transform = 'translate(' + (r() * amp).toFixed(1) + 'px,' + (r() * amp).toFixed(1) + 'px) rotate(' + (r() * k * SHAKE_MAX_DEG).toFixed(2) + 'deg)';
+    }, 40);
+  };
+  const stopShake = () => {
+    if (shakeLoop) { clearInterval(shakeLoop); shakeLoop = null; }
+    document.body.style.transform = '';
+  };
   const collapseBank = () => {
     // Everyone's money drains to $0.00 on screen; the game itself is wiped straight away.
     const rows = state.players.map(p => ({ name: p.name, from: balanceOf(p.id), to: 0 }));
     state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
     invalidate(); save();
-    replayClass(document.body, 'quake');
     showOverlay({ kind: 'collapse', title: 'Bank Collapse', note: rows.length ? 'Every account is wiped out' : 'Nothing left in the vault',
       rows, fmt: moneyCents, countMs: COLLAPSE_COUNT_MS, holdMs: COLLAPSE_HOLD_MS, block: true,
       onDone: () => { show('start'); toast('The bank has collapsed. Enroll cards to start a new economy.'); } });
@@ -1969,22 +1988,22 @@ function boot(){
     if (!holdTimer) return;
     clearTimeout(holdTimer); holdTimer = null;
     hold.dataset.holding = 'false';
-    stopBuzz();
-    if (early) hint.textContent = 'Let go too soon. Hold until it fills.';
+    stopBuzz(); stopShake();
+    if (early) hint.textContent = 'The run fizzled. Hold until it fills.';
   };
   const startHold = e => {
     if (e && e.button > 0) return;            // mouse: left button only
     if (e && e.preventDefault) e.preventDefault();
     if (holdTimer) return;
-    hold.dataset.holding = 'true'; hint.textContent = 'Keep holding…';
-    startBuzz();
+    hold.dataset.holding = 'true'; hint.textContent = 'The run is on. Keep holding…';
+    startBuzz(); startShake();
     holdTimer = setTimeout(() => {
       holdTimer = null; hold.dataset.holding = 'false'; modal.dataset.open = 'false';
-      stopBuzz();                             // hand over to the collapse rumble
+      stopBuzz(); stopShake();                // the crash: shaking stops, the collapse rumble takes over
       collapseBank();
     }, COLLAPSE_HOLD_MS_PRESS);
   };
-  const openCollapse = () => { hint.textContent = 'Press and hold to collapse'; modal.dataset.open = 'true'; hold.focus(); };
+  const openCollapse = () => { hint.textContent = 'Press and hold to start the run'; modal.dataset.open = 'true'; hold.focus(); };
   const closeCollapse = () => { endHold(false); modal.dataset.open = 'false'; };
   $('collapseBtn').onclick = openCollapse;
   $('collapseCancel').onclick = closeCollapse;
