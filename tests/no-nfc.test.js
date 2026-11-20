@@ -8,6 +8,10 @@ const tick = () => new Promise(r => setTimeout(r, 0));
 const click = async el => { (typeof el === 'string' ? d.querySelector(el) : el).click(); await tick(); };
 const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.includes(t));
 (async () => {
+  assert.notEqual(d.querySelector('#splash').dataset.done, 'true', 'splash shows first');
+  await new Promise(r => setTimeout(r, ev('SPLASH_MS') + 100));
+  assert.equal(d.querySelector('#splash').dataset.done, 'true', 'splash fades to the Main Menu');
+  assert.equal(ev('current'), 'start');
   await click('#enrollBtn'); assert.equal(ev('current'), 'enroll');
   assert.match(d.querySelector('#nfcNotice').textContent, /No NFC/);
   for (const n of ['Ann','Ben']) { await click('#enrollTarget'); assert.equal(ev('current'), 'name'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); assert.equal(ev('current'), 'enroll'); }

@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v16` -> `bank-v17`...) whenever you change shipped files, so installed copies update.
+  (`bank-v17` -> `bank-v18`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -32,9 +32,11 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   what a tap means. `tokenFromMessage`, `tokenLabel`, `displayName`, `TOKEN_ICONS` handle tokens.
 - Rules implemented: colour-set rent doubling, houses/hotels with even building and a 32/12 limit,
   railroads by count, utilities 4x/10x the dice, mortgages with 10% interest.
-- Start screen: Continue Game (only if `state.open` or the ledger has entries), Start a New Game (clears
+- Splash (`#splash`): logo, "Bank Terminal", tagline, no buttons; covers the app as it opens and
+  fades after `SPLASH_MS` to reveal the Start screen (Main Menu).
+- Start screen (Main Menu): "Bank Terminal" at the top centre, buttons centred: Continue Game (only if `state.open` or the ledger has entries), Start a New Game (clears
   players, ledger and `open`; keeps registered deed stickers, which are system setup; confirms first
-  if there are players or a game), and a Settings button.
+  if there are players or a game), and Settings, all three in the same big style.
 - There is no tab bar. The Bank screen is the hub: four action buttons, then rows (`data-go`) for
   Players, Deeds, Ledger, Standings and Settings, then Bank Collapse (wipes everything after a
   confirm + typing COLLAPSE, then returns to the Start screen). Every other screen has its own Back button.
