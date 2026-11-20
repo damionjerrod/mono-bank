@@ -25,6 +25,13 @@ const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.
   assert.equal(ev('current'), 'amount');
   await click(byText('#keypad button', '7')); await click('#amtConfirm');
   assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1507);
+  assert.equal(d.querySelector('#fx').dataset.show, 'true', 'transaction overlay shows');
+  assert.equal(d.querySelector('#fxAmt').textContent, '$7');
+  assert.match(d.querySelector('#fxRows').textContent, /Ben/);
+  // feedback switches are remembered on the phone
+  await click('#soundToggle'); assert.equal(d.querySelector('#soundToggle').getAttribute('aria-checked'), 'false');
+  assert.equal(JSON.parse(w.localStorage.getItem('monopoly-bank-fx')).sound, false);
+  await click('#soundToggle'); assert.equal(JSON.parse(w.localStorage.getItem('monopoly-bank-fx')).sound, true);
   assert.equal(ev('current'), 'idle');
   await click('#undoBtn'); assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1500);
   await click('section[data-view="ledger"] [data-back="idle"]');

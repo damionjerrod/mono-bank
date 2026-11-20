@@ -305,7 +305,7 @@ input[type=text]:focus{outline:2px solid var(--accent);outline-offset:0}
   background:var(--text);color:var(--bg);font-weight:600;font-size:14.5px;
   padding:12px 18px;border-radius:14px;opacity:0;pointer-events:none;
   box-shadow:0 10px 30px rgba(0,0,0,.25);
-  transition:opacity .2s ease,transform .2s ease;z-index:50;max-width:90vw;text-align:center;
+  transition:opacity .2s ease,transform .2s ease;z-index:95;max-width:90vw;text-align:center;
 }
 .toast[data-show="true"]{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -419,7 +419,72 @@ button.tile[data-tone="primary"]{text-align:left}
 button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 
 
+/* ---------- feedback: transaction overlay, burst, pulse, shake ---------- */
+.fx{position:fixed;inset:0;z-index:90;display:grid;place-items:center;pointer-events:none;
+  background:color-mix(in srgb,var(--bg) 55%,transparent);opacity:0;transition:opacity .18s ease}
+.fx[data-show="true"]{opacity:1}
+.fx-card{position:relative;min-width:250px;max-width:86vw;background:var(--surface);color:var(--text);
+  border-radius:24px;padding:22px 22px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);
+  transform:scale(.86);transition:transform .25s cubic-bezier(.2,1.4,.4,1)}
+.fx[data-show="true"] .fx-card{transform:scale(1)}
+.fx-check{width:58px;height:58px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;
+  background:var(--go);color:var(--on-go)}
+.fx-check svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:30;stroke-dashoffset:30}
+.fx[data-show="true"] .fx-check svg{animation:draw .35s .1s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.fx-amt{font-size:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.fx-amt:empty{display:none}
+.fx-note{color:var(--muted);font-size:14px;margin-top:2px}
+.fx-rows{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.fx-rows:empty{display:none}
+.fx-row{display:flex;justify-content:space-between;gap:14px;font-size:15px;font-weight:600;
+  background:var(--surface-hi);border-radius:12px;padding:8px 12px}
+.fx-row .v{font-variant-numeric:tabular-nums}
+.fx-row .v[data-dir="up"]{color:var(--pos)}
+.fx-row .v[data-dir="down"]{color:var(--neg)}
+.fx-burst{position:absolute;left:50%;top:51px;width:0;height:0}
+.fx-burst i{position:absolute;width:9px;height:9px;border-radius:50%;left:-4.5px;top:-4.5px;opacity:0}
+.fx-burst.go i{animation:burst .7s ease-out forwards}
+@keyframes burst{
+  0%{transform:translate(0,0) scale(.6);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) scale(1);opacity:0}
+}
+.tap-core.hit{animation:hit .45s ease}
+@keyframes hit{
+  0%{transform:scale(1);box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 60%,transparent)}
+  35%{transform:scale(1.08)}
+  100%{transform:scale(1);box-shadow:0 0 0 26px transparent}
+}
+.shake{animation:shake .38s ease}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-9px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(4px)}
+}
+.quake{animation:quake .9s ease}
+@keyframes quake{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  10%{transform:translate(-10px,4px) rotate(-1deg)}
+  25%{transform:translate(9px,-6px) rotate(1deg)}
+  40%{transform:translate(-8px,6px) rotate(-.6deg)}
+  55%{transform:translate(7px,-3px) rotate(.5deg)}
+  70%{transform:translate(-4px,3px)}
+  85%{transform:translate(3px,-2px)}
+}
+
+/* ---------- settings: on/off switches ---------- */
+.menu .toggle{cursor:pointer}
+.switch{position:relative;width:48px;height:28px;border-radius:999px;background:var(--hair);flex:none;transition:background-color .2s ease}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s ease}
+.toggle[aria-checked="true"] .switch{background:var(--accent)}
+.toggle[aria-checked="true"] .switch::after{transform:translateX(20px)}
+
 @media (prefers-reduced-motion:reduce){
+  .shake,.quake,.tap-core.hit,.fx-burst.go i{animation:none}
   .tap-rings i{animation:none;opacity:.3}
   *{transition-duration:.01ms !important}
 }
@@ -654,6 +719,11 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
       </button>
     </div>
     <p class="hint">Saved on this phone. Changing the theme never touches the game.</p>
+    <h2 class="section">Feedback</h2>
+    <div class="menu">
+      <button class="toggle" id="soundToggle" role="switch" aria-checked="true"><span class="txt"><b>Sound</b><small>Taps, payments and alerts</small></span><span class="switch"></span></button>
+      <button class="toggle" id="vibeToggle" role="switch" aria-checked="true"><span class="txt"><b>Vibration</b><small>Buzz on taps, payments and alerts</small></span><span class="switch"></span></button>
+    </div>
     <h2 class="section">Setup</h2>
     <div class="stack">
       <button class="btn" id="deedSetupBtn">Register Deed Stickers<small id="deedCount"></small></button>
@@ -677,6 +747,17 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 
 
 <div class="toast" id="toast"></div>
+
+<!-- Transaction feedback: a check, the amount, and each player's balance counting to its new value -->
+<div class="fx" id="fx" aria-hidden="true">
+  <div class="fx-card">
+    <div class="fx-burst" id="fxBurst"></div>
+    <div class="fx-check"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div class="fx-amt" id="fxAmt"></div>
+    <div class="fx-note" id="fxNote"></div>
+    <div class="fx-rows" id="fxRows"></div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -829,6 +910,9 @@ function netWorth(id){
 }
 
 function post(from, to, amount, note, fx){
+  const isPlayer = id => id && id !== BANK;
+  const before = {};
+  [from, to].filter(isPlayer).forEach(id => { before[id] = balanceOf(id); });
   const t = { from, to, amount, note, ts: Date.now() };
   if (fx) t.fx = fx;
   state.ledger.push(t);
@@ -836,6 +920,9 @@ function post(from, to, amount, note, fx){
   if (from && from !== BANK && balanceOf(from) < 0)
     setTimeout(() => toast(nameOf(from) + ' is ' + money(-balanceOf(from)) + ' short. Mortgage or sell to cover it.'), 2700);
   renderAll();
+  const rows = amount ? Object.keys(before).map(id => ({ name: nameOf(id), from: before[id], to: balanceOf(id) })) : [];
+  showTransaction({ amount, note: amount ? nameOf(from) + ' → ' + nameOf(to) : note, rows,
+    kind: note === 'Passed GO' ? 'passgo' : 'success' });
 }
 
 /* ---- persistence: best-effort, never load-bearing ---- */
@@ -929,14 +1016,14 @@ function handleTap(serial, token = null){
   lastToken = token;
   const known = findPlayer(serial);
   if (known && token && known.token !== token){ known.token = token; save(); renderAll(); }
-  beep(); buzz();
+  fxTap();
   if (onTap) onTap(serial);
-  else toast(current === 'start' ? 'Tap Continue Game first' : 'Finish this screen first');
+  else refuse(current === 'start' ? 'Tap Continue Game first' : 'Finish this screen first');
 }
 
 function identifyTap(serial){
   const r = resolve(serial);
-  if (!r) { toast('Unknown tag. Enroll it under Players.'); return; }
+  if (!r) { refuse('Unknown tag. Enroll it under Players.'); return; }
   if (r.kind === 'player') openPlayer(r.player);
   else openDeed(r.idx);
 }
@@ -952,19 +1039,127 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* ---- feedback ---- */
+/* ════════════════════════════════════════════════════════════
+   FEEDBACK: sound, vibration, animation
+   Sounds are synthesised with Web Audio (nothing to download, works offline). Vibration
+   uses navigator.vibrate (Chrome on Android). Both can be switched off in Settings; the
+   choice is stored per phone under "monopoly-bank-fx", apart from the saved game.
+   ════════════════════════════════════════════════════════════ */
+const FX_KEY = 'monopoly-bank-fx';
+const fxPrefs = (() => { try { return Object.assign({ sound: true, vibe: true }, JSON.parse(localStorage.getItem(FX_KEY) || '{}')); } catch(e){ return { sound: true, vibe: true }; } })();
+function saveFxPrefs(){ try { localStorage.setItem(FX_KEY, JSON.stringify(fxPrefs)); } catch(e){ /* fine */ } }
+
 let audioCtx = null;
-function beep(){
+function ac(){
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.type = 'square'; o.frequency.value = 1180;
-    g.gain.setValueAtTime(0.06, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.13);
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(); o.stop(audioCtx.currentTime + 0.14);
-  } catch(e){ /* fine */ }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  } catch(e){ return null; }
 }
-const buzz = () => { try { navigator.vibrate && navigator.vibrate(28); } catch(e){} };
+// Browsers only allow sound after the first touch; wake the audio engine on it.
+document.addEventListener('pointerdown', () => { if (fxPrefs.sound) ac(); }, { once: true });
+
+function tone(freq, at, dur, { type = 'sine', gain = 0.12, to = null } = {}){
+  const c = ac(); if (!c) return;
+  const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function noise(at, dur, { gain = 0.2, from = 1800, to = 120 } = {}){
+  const c = ac(); if (!c) return;
+  const t = c.currentTime + at, len = Math.ceil(c.sampleRate * dur);
+  const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = buf; f.type = 'lowpass';
+  f.frequency.setValueAtTime(from, t); f.frequency.exponentialRampToValueAtTime(to, t + dur);
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f); f.connect(g); g.connect(c.destination);
+  src.start(t); src.stop(t + dur);
+}
+
+const SOUNDS = {
+  tap:      () => { tone(1600, 0, 0.05, { type: 'triangle', gain: 0.07 }); tone(2400, 0.01, 0.04, { gain: 0.03 }); },
+  success:  () => { tone(880, 0, 0.16, { gain: 0.12 }); tone(1318.5, 0.09, 0.32, { gain: 0.12 }); },
+  error:    () => { tone(220, 0, 0.13, { type: 'square', gain: 0.045 }); tone(155, 0.13, 0.2, { type: 'square', gain: 0.045 }); },
+  passgo:   () => { [523.25, 659.25, 783.99].forEach((f, i) => tone(f, i * 0.08, 0.16, { type: 'triangle', gain: 0.11 }));
+                    tone(1046.5, 0.24, 0.42, { type: 'triangle', gain: 0.13 }); tone(1568, 0.24, 0.42, { gain: 0.04 }); },
+  collapse: () => { noise(0, 1.6, { gain: 0.35, from: 2400, to: 60 }); tone(160, 0, 1.5, { type: 'sawtooth', gain: 0.08, to: 32 });
+                    tone(90, 0.05, 1.4, { gain: 0.16, to: 28 }); }
+};
+const VIBES = { tap: 15, success: [20, 60, 25], error: 180, passgo: [30, 40, 30, 40, 70], collapse: [400, 100, 600] };
+
+function feel(kind){
+  if (fxPrefs.sound) { try { SOUNDS[kind](); } catch(e){ /* no audio: fine */ } }
+  if (fxPrefs.vibe) { try { navigator.vibrate && navigator.vibrate(VIBES[kind]); } catch(e){ /* fine */ } }
+}
+
+const activeView = () => document.querySelector('.view[data-active="true"]');
+function replayClass(el, cls){
+  if (!el) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 1000);
+}
+// A card or sticker was read: click, tick, and the rings on screen (if any) pulse.
+function fxTap(){ feel('tap'); replayClass(activeView()?.querySelector('.tap-core'), 'hit'); }
+// Something was refused: low tone, long buzz, the screen gives a small shake. Shows the message too.
+function refuse(msg){ toast(msg); feel('error'); replayClass(activeView(), 'shake'); }
+
+// Count a number on screen from one value to another.
+const raf = window.requestAnimationFrame ? f => window.requestAnimationFrame(f) : f => setTimeout(() => f(Date.now()), 16);
+const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countTo(el, from, to, ms = 650){
+  if (reduceMotion() || from === to) { el.textContent = money(to); return; }
+  const t0 = Date.now();
+  const step = () => {
+    const k = Math.min(1, (Date.now() - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = money(Math.round(from + (to - from) * e));
+    if (k < 1) raf(step);
+  };
+  step();
+}
+
+// The transaction overlay: a check, the amount, and each player's balance counting to its new value.
+let fxTimer = null;
+function showTransaction({ amount, note, rows, kind }){
+  const box = $('fx');
+  $('fxAmt').textContent = amount ? money(amount) : '';
+  $('fxNote').textContent = note || '';
+  const list = $('fxRows'); list.innerHTML = '';
+  rows.forEach(r => {
+    const row = document.createElement('div'); row.className = 'fx-row';
+    row.innerHTML = '<span class="n"></span><span class="v"></span>';
+    row.querySelector('.n').textContent = r.name;
+    const v = row.querySelector('.v');
+    v.dataset.dir = r.to > r.from ? 'up' : r.to < r.from ? 'down' : '';
+    v.textContent = money(r.from);
+    list.appendChild(row);
+    setTimeout(() => countTo(v, r.from, r.to), 180);
+  });
+  const burst = $('fxBurst'); burst.className = 'fx-burst'; burst.innerHTML = '';
+  if (kind === 'passgo'){
+    const colors = ['var(--accent)', 'var(--go)', '#F5D547', '#5B8DEF', '#FF6B6B'];
+    for (let i = 0; i < 14; i++){
+      const a = (i / 14) * Math.PI * 2, d = 60 + (i % 3) * 18;
+      const dot = document.createElement('i');
+      dot.style.background = colors[i % colors.length];
+      dot.style.setProperty('--dx', Math.round(Math.cos(a) * d) + 'px');
+      dot.style.setProperty('--dy', Math.round(Math.sin(a) * d) + 'px');
+      burst.appendChild(dot);
+    }
+    void burst.offsetWidth; burst.classList.add('go');
+  }
+  box.dataset.show = 'true';
+  clearTimeout(fxTimer);
+  fxTimer = setTimeout(() => { box.dataset.show = 'false'; }, kind === 'passgo' ? 1700 : 1400);
+  feel(kind);
+}
 
 let toastTimer = null;
 function toast(msg){
@@ -1092,7 +1287,7 @@ function renderRoster(el, opts = {}){
       x.setAttribute('aria-label', 'Remove ' + p.name);
       x.onclick = ev => {
         ev.stopPropagation();
-        if (state.ledger.length){ toast('Start a new game before removing players'); return; }
+        if (state.ledger.length){ refuse('Start a new game before removing players'); return; }
         state.players = state.players.filter(q => q.id !== p.id);
         save(); renderAll();
       };
@@ -1330,8 +1525,8 @@ function choosePlayer({ title, hint, exclude = [], allowBank = false, onPick, on
   const ok = id => !exclude.includes(id);
   onTap = serial => {
     const r = resolve(serial);
-    if (!r || r.kind !== 'player') { toast('That isn\'t a player card'); return; }
-    if (!ok(r.player.id)) { toast('Pick a different player'); return; }
+    if (!r || r.kind !== 'player') { refuse('That isn\'t a player card'); return; }
+    if (!ok(r.player.id)) { refuse('Pick a different player'); return; }
     onPick(r.player.id);
   };
   const el = $('chList');
@@ -1356,8 +1551,8 @@ function chooseProperty({ title, hint, filter = () => true, label, onPick, onCan
   show('property');
   onTap = serial => {
     const r = resolve(serial);
-    if (!r || r.kind !== 'deed') { toast('That isn\'t a registered deed'); return; }
-    if (!filter(r.idx)) { toast(PROPERTIES[r.idx].n + ' doesn\'t fit here'); return; }
+    if (!r || r.kind !== 'deed') { refuse('That isn\'t a registered deed'); return; }
+    if (!filter(r.idx)) { refuse(PROPERTIES[r.idx].n + ' doesn\'t fit here'); return; }
     onPick(r.idx);
   };
   renderPropList($('propList'), {
@@ -1428,9 +1623,9 @@ function payPlayerFlow(){
    player-first (tap the payer, then the deed). Same ending. */
 function finishRent(i, payer, back){
   const p = PROPERTIES[i], s = deedState(i);
-  if (!s.owner) { toast(p.n + ' is still for sale'); return; }
-  if (s.mortgaged) { toast(p.n + ' is mortgaged. No rent due.'); return; }
-  if (s.owner === payer) { toast(nameOf(payer) + ' owns it. No rent due.'); return; }
+  if (!s.owner) { refuse(p.n + ' is still for sale'); return; }
+  if (s.mortgaged) { refuse(p.n + ' is mortgaged. No rent due.'); return; }
+  if (s.owner === payer) { refuse(nameOf(payer) + ' owns it. No rent due.'); return; }
   const charge = dice => {
     const due = rentDue(i, dice);
     const detail = p.util ? ' (rolled ' + dice + ')' : (s.houses === 5 ? ' (hotel)' : s.houses ? ' (' + s.houses + ' house' + (s.houses > 1 ? 's' : '') + ')' : '');
@@ -1465,7 +1660,7 @@ function buyDeed(i, buyer, back){
   const p = PROPERTIES[i];
   enterAmount({ who: nameOf(buyer), note: 'Bought ' + p.n, preset: p.price, onCancel: back,
     onConfirm: n => {
-      if (deedState(i).owner){ toast(p.n + ' is already owned'); return; }
+      if (deedState(i).owner){ refuse(p.n + ' is already owned'); return; }
       post(buyer, BANK, n, (n === p.price ? 'Bought ' : 'Won at auction: ') + p.n, { prop: i, owner: buyer, houses: 0, mortgaged: false });
       toast(nameOf(buyer) + ' bought ' + p.n);
       resetToIdle();
@@ -1495,13 +1690,13 @@ function myDeedsFlow(){
 
 function buildHouse(i){
   const p = PROPERTIES[i], s = deedState(i), group = groupOf(p.g);
-  if (!ownsGroup(s.owner, p.g)) { toast('Own the whole colour set first'); return; }
-  if (group.some(j => deedState(j).mortgaged)) { toast('Lift the mortgages in this set first'); return; }
+  if (!ownsGroup(s.owner, p.g)) { refuse('Own the whole colour set first'); return; }
+  if (group.some(j => deedState(j).mortgaged)) { refuse('Lift the mortgages in this set first'); return; }
   if (s.houses >= 5) return;
-  if (s.houses > Math.min(...group.map(j => deedState(j).houses))) { toast('Build evenly: add to the others in this set first'); return; }
+  if (s.houses > Math.min(...group.map(j => deedState(j).houses))) { refuse('Build evenly: add to the others in this set first'); return; }
   const b = buildingsInPlay();
-  if (s.houses === 4 && b.hotels >= HOTEL_SUPPLY) { toast('The bank is out of hotels'); return; }
-  if (s.houses < 4 && b.houses >= HOUSE_SUPPLY) { toast('The bank is out of houses'); return; }
+  if (s.houses === 4 && b.hotels >= HOTEL_SUPPLY) { refuse('The bank is out of hotels'); return; }
+  if (s.houses < 4 && b.houses >= HOUSE_SUPPLY) { refuse('The bank is out of houses'); return; }
   const next = s.houses + 1;
   post(s.owner, BANK, p.house, (next === 5 ? 'Hotel on ' : 'House ' + next + ' on ') + p.n, { prop: i, houses: next });
   toast(next === 5 ? 'Hotel built' : 'House ' + next + ' built');
@@ -1509,14 +1704,14 @@ function buildHouse(i){
 function sellHouse(i){
   const p = PROPERTIES[i], s = deedState(i), group = groupOf(p.g);
   if (!s.houses) return;
-  if (s.houses < Math.max(...group.map(j => deedState(j).houses))) { toast('Sell evenly: sell from the others in this set first'); return; }
-  if (s.houses === 5 && buildingsInPlay().houses + 4 > HOUSE_SUPPLY) { toast('Not enough houses in the bank to break up the hotel'); return; }
+  if (s.houses < Math.max(...group.map(j => deedState(j).houses))) { refuse('Sell evenly: sell from the others in this set first'); return; }
+  if (s.houses === 5 && buildingsInPlay().houses + 4 > HOUSE_SUPPLY) { refuse('Not enough houses in the bank to break up the hotel'); return; }
   post(BANK, s.owner, p.house / 2, (s.houses === 5 ? 'Sold hotel on ' : 'Sold house on ') + p.n, { prop: i, houses: s.houses - 1 });
   toast('Sold for ' + money(p.house / 2));
 }
 function mortgage(i){
   const p = PROPERTIES[i], s = deedState(i);
-  if (groupOf(p.g).some(j => deedState(j).houses)) { toast('Sell the buildings in this set first'); return; }
+  if (groupOf(p.g).some(j => deedState(j).houses)) { refuse('Sell the buildings in this set first'); return; }
   post(BANK, s.owner, mortgageValue(p), 'Mortgaged ' + p.n, { prop: i, mortgaged: true });
   toast(nameOf(s.owner) + ' got ' + money(mortgageValue(p)));
 }
@@ -1527,7 +1722,7 @@ function unmortgage(i){
 }
 function transferFlow(i){
   const p = PROPERTIES[i], s = deedState(i);
-  if (groupOf(p.g).some(j => deedState(j).houses)) { toast('Sell the buildings in this set first'); return; }
+  if (groupOf(p.g).some(j => deedState(j).houses)) { refuse('Sell the buildings in this set first'); return; }
   choosePlayer({
     title: 'Who Gets ' + p.n + '?', hint: 'Settle any cash with "Pay Player". Choose the bank if a player is bankrupt.',
     exclude: [s.owner], allowBank: true, onCancel: backToDeed,
@@ -1546,7 +1741,7 @@ function transferFlow(i){
 let dsIdx = 0;
 let dsReturn = 'settings';   // the screen that opened deed registration
 function deedSetupTap(serial){
-  if (findPlayer(serial)) { toast('That\'s ' + findPlayer(serial).name + '’s player card'); return; }
+  if (findPlayer(serial)) { refuse('That\'s ' + findPlayer(serial).name + '’s player card'); return; }
   for (const k of Object.keys(state.deeds)) if (state.deeds[k] === dsIdx) delete state.deeds[k];
   state.deeds[serial] = dsIdx;     // a sticker moved to a new deed drops its old one
   save();
@@ -1611,7 +1806,7 @@ function boot(){
   });
   $('amtConfirm').onclick = () => {
     const n = Number(amt.str || 0);
-    if (n <= 0){ toast('Enter an amount first'); return; }
+    if (n <= 0){ refuse('Enter an amount first'); return; }
     amt.onConfirm(n, amt.note);
   };
   $('amtCancel').onclick = () => (amt.onCancel || resetToIdle)();
@@ -1620,8 +1815,8 @@ function boot(){
 
   // enrollment
   const enrollTap = serial => {
-    if (findPlayer(serial)) { toast(findPlayer(serial).name + ' is already enrolled'); return; }
-    if (serial in state.deeds) { toast('That sticker is ' + PROPERTIES[state.deeds[serial]].n); return; }
+    if (findPlayer(serial)) { refuse(findPlayer(serial).name + ' is already enrolled'); return; }
+    if (serial in state.deeds) { refuse('That sticker is ' + PROPERTIES[state.deeds[serial]].n); return; }
     pendingCard = serial;
     pendingToken = lastToken;
     const taken = pendingToken && state.players.find(p => p.token === pendingToken);
@@ -1650,7 +1845,7 @@ function boot(){
   $('nameCancel').onclick = () => { pendingCard = null; pendingToken = null; openEnroll(); };
   $('saveNameBtn').onclick = () => {
     const name = $('nameInput').value.trim();
-    if (!name){ toast('Give the player a name'); return; }
+    if (!name){ refuse('Give the player a name'); return; }
     const chosen = [...sw.children].find(b => b.getAttribute('aria-pressed') === 'true');
     const color = TOKEN_COLORS[[...sw.children].indexOf(chosen)] || TOKEN_COLORS[0];
     const player = { id: pendingCard, name, color };
@@ -1695,6 +1890,7 @@ function boot(){
     state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
     invalidate(); save();
     toast('The bank has collapsed. Enroll cards to start a new economy.');
+    feel('collapse'); replayClass(document.body, 'quake');
     show('start');            // nothing left to continue
   };
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
@@ -1737,6 +1933,14 @@ function boot(){
   });
   $('managePlayersBtn').onclick = () => show('setup');
   $('topBack').onclick = goBack;
+  // Feedback switches (Settings)
+  const syncToggles = () => {
+    $('soundToggle').setAttribute('aria-checked', String(fxPrefs.sound));
+    $('vibeToggle').setAttribute('aria-checked', String(fxPrefs.vibe));
+  };
+  syncToggles();
+  $('soundToggle').onclick = () => { fxPrefs.sound = !fxPrefs.sound; saveFxPrefs(); syncToggles(); if (fxPrefs.sound) SOUNDS.success(); };
+  $('vibeToggle').onclick = () => { fxPrefs.vibe = !fxPrefs.vibe; saveFxPrefs(); syncToggles(); if (fxPrefs.vibe) try { navigator.vibrate && navigator.vibrate(VIBES.success); } catch(e){} };
   $('status').onclick = toggleStatus;
   $('settingsBack').onclick = () => settingsFrom === 'idle' ? resetToIdle() : show(settingsFrom);
 

@@ -160,7 +160,11 @@ function makeDom(){
   await tap('A1'); assert.equal(bal('Ann'), annB + 200); assert.equal(view(), 'idle');
   await click('[data-bank="buy"]'); await tap('B2'); assert.equal(view(), 'property');
   await click('#prCancel'); assert.equal(view(), 'idle', 'cancel goes back to the Bank tab');
-  await click('[data-bank="pay"]'); await tap('C3'); assert.equal(view(), 'amount');
+  await click('[data-bank="pay"]');
+  await tap('D21'); assert.equal(view(), 'choose', 'a deed is refused when a player is needed');
+  assert(d.querySelector('section[data-view="choose"]').classList.contains('shake'), 'refusal shakes the screen');
+  assert.match(text('#toast'), /isn't a player card/);
+  await tap('C3'); assert.equal(view(), 'amount');
   await click('#amtCancel'); assert.equal(view(), 'idle');
   await click('[data-go="ledger"]'); await click('#topBack'); assert.equal(view(), 'idle', 'back arrow = the screen\'s Back');
   await click('[data-bank="collect"]'); await click('#topBack'); assert.equal(view(), 'idle', 'back arrow = Cancel');
