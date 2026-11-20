@@ -144,6 +144,13 @@ function makeDom(){
   assert.equal(view(), 'start');
   assert.equal(d.querySelector('#continueBtn').hidden, false, 'saved game: Continue shown');
   await click('#continueBtn'); assert.equal(view(), 'idle');
+  // status chip: full on arrival, shrinks after a few seconds, a tap shows it again
+  const chip = () => d.querySelector('#status').getAttribute('aria-expanded');
+  assert.equal(chip(), 'true');
+  ev('setStatusOpen(false)'); assert.equal(chip(), 'false');
+  await click('#status'); assert.equal(chip(), 'true');
+  await click('#status'); assert.equal(chip(), 'false');
+  assert.equal(ev('STATUS_PEEK_MS'), 3000);
   assert.equal(ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})'), snap);
 
   // Bank tab actions: pick the action first, then the player by card
