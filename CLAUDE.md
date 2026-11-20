@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v21` -> `bank-v22`...) whenever you change shipped files, so installed copies update.
+  (`bank-v22` -> `bank-v23`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -38,8 +38,9 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   players, ledger and `open`; keeps registered deed stickers, which are system setup; confirms first
   if there are players or a game), and Settings, all three in the same big style.
 - There is no tab bar. The Bank screen is the hub: four action buttons, then rows (`data-go`) for
-  Players, Deeds, Ledger, Standings and Settings, then Bank Collapse (wipes everything after a
-  confirm + typing COLLAPSE, then returns to the Start screen). Every other screen has its own Back button.
+  Players, Deeds, Ledger, Standings and Settings, then Bank Collapse (opens a modal with the warning; the red Collapse button must be pressed and
+  held for `COLLAPSE_HOLD_MS_PRESS` while a fill sweeps across and the phone vibrates; letting go
+  early cancels; then it wipes everything and returns to the Start screen). Every other screen has its own Back button.
 - Top bar (all screens but Start): back arrow (`#topBack`, `goBack()`), "Bank Terminal" centred, scan
   status chip on the right (`#status`: full light + text when the top bar appears or the status
   changes, shrinks to just the light after `STATUS_PEEK_MS`; tapping toggles it). The arrow goes to Start from the Bank screen; elsewhere it presses that screen's

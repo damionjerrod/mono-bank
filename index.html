@@ -481,6 +481,31 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
   85%{transform:translate(3px,-2px)}
 }
 
+/* ---------- Bank Collapse: confirm modal with a press-and-hold button ---------- */
+.modal{position:fixed;inset:0;z-index:92;display:grid;place-items:center;padding:20px;
+  background:color-mix(in srgb,#000 55%,transparent);opacity:0;visibility:hidden;
+  transition:opacity .2s ease,visibility 0s linear .2s}
+.modal[data-open="true"]{opacity:1;visibility:visible;transition:opacity .2s ease}
+.modal-card{width:100%;max-width:380px;background:var(--surface);color:var(--text);border-radius:24px;
+  padding:24px 20px 14px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);
+  transform:scale(.94);transition:transform .2s ease}
+.modal[data-open="true"] .modal-card{transform:scale(1)}
+.modal-card .fx-check{background:var(--neg);color:#fff}
+.modal-card .fx-check svg{stroke-dashoffset:0}
+.modal-card h2{font-size:24px;font-weight:700;color:var(--neg);margin:0 0 8px;letter-spacing:-.01em}
+.modal-card p{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.45}
+.hold{position:relative;overflow:hidden;width:100%;border:none;border-radius:var(--r);padding:18px;
+  font:inherit;font-size:18px;font-weight:700;cursor:pointer;color:var(--neg);
+  background:color-mix(in srgb,var(--neg) 14%,transparent);
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+.hold .fill{position:absolute;inset:0;background:var(--neg);transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease-out}
+.hold[data-holding="true"] .fill{transform:scaleX(1);transition:transform var(--hold-ms,2000ms) linear}
+.hold .lbl{position:relative;transition:color .2s ease}
+.hold[data-holding="true"] .lbl{color:#fff}
+.hold:focus-visible{outline:2px solid var(--neg);outline-offset:2px}
+.hold-hint{display:block;margin-top:8px;font-size:13px;color:var(--muted);min-height:18px}
+
 /* ---------- settings: on/off switches ---------- */
 .menu .toggle{cursor:pointer}
 .switch{position:relative;width:48px;height:28px;border-radius:999px;background:var(--hair);flex:none;transition:background-color .2s ease}
@@ -753,6 +778,18 @@ button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
 
 
 <div class="toast" id="toast"></div>
+
+<!-- Bank Collapse confirmation: press and hold the button to collapse -->
+<div class="modal" id="collapseModal" data-open="false" role="dialog" aria-modal="true" aria-labelledby="collapseTitle">
+  <div class="modal-card">
+    <div class="fx-check"><svg viewBox="0 0 24 24"><path d="M3 6l7 7 4-4 7 7"/><path d="M21 11v5h-5"/></svg></div>
+    <h2 id="collapseTitle">Bank Collapse</h2>
+    <p>The bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.</p>
+    <button class="hold" id="collapseHold" data-holding="false"><span class="fill"></span><span class="lbl">Collapse</span></button>
+    <span class="hold-hint" id="collapseHint">Press and hold to collapse</span>
+    <button class="btn" data-tone="quiet" id="collapseCancel">Cancel</button>
+  </div>
+</div>
 
 <!-- Transaction feedback: a check, the amount, and each player's balance counting to its new value -->
 <div class="fx" id="fx" aria-hidden="true">
@@ -1138,6 +1175,7 @@ function countTo(el, from, to, ms = 650, fmt = money){
 const FX_START_MS = 250, FX_COUNT_MS = 1000, FX_HOLD_MS = 2000;
 const COLLAPSE_COUNT_MS = 1800, COLLAPSE_HOLD_MS = 2000;
 const COLLAPSE_TOTAL_MS = FX_START_MS + COLLAPSE_COUNT_MS + COLLAPSE_HOLD_MS + 250;
+const COLLAPSE_HOLD_MS_PRESS = 2000;   // how long the Collapse button must be held
 let fxTimer = null;
 const showTransaction = opts => showOverlay(opts);
 function showOverlay({ amount, title, note, rows, kind, countMs = FX_COUNT_MS, holdMs = FX_HOLD_MS, fmt = money, block = false, onDone = null }){
@@ -1903,10 +1941,11 @@ function boot(){
     await startScanning();
   };
   $('startSettingsBtn').onclick = () => openSettings('start');
-  $('collapseBtn').onclick = () => {
-    if (!confirm('BANK COLLAPSE\n\nThe bank fails. Every player card, every registered deed sticker and the whole game are wiped out. This cannot be undone.')) return;
-    const typed = prompt('To confirm, type COLLAPSE');
-    if ((typed || '').trim().toUpperCase() !== 'COLLAPSE'){ toast('Crisis averted. Nothing was wiped.'); return; }
+  // Bank Collapse: a confirm modal; the Collapse button must be held for COLLAPSE_HOLD_MS_PRESS.
+  const modal = $('collapseModal'), hold = $('collapseHold'), hint = $('collapseHint');
+  hold.style.setProperty('--hold-ms', COLLAPSE_HOLD_MS_PRESS + 'ms');
+  let holdTimer = null;
+  const collapseBank = () => {
     // Everyone's money drains to $0.00 on screen; the game itself is wiped straight away.
     const rows = state.players.map(p => ({ name: p.name, from: balanceOf(p.id), to: 0 }));
     state.players = []; state.deeds = {}; state.ledger = []; state.open = false;
@@ -1916,6 +1955,35 @@ function boot(){
       rows, fmt: moneyCents, countMs: COLLAPSE_COUNT_MS, holdMs: COLLAPSE_HOLD_MS, block: true,
       onDone: () => { show('start'); toast('The bank has collapsed. Enroll cards to start a new economy.'); } });
   };
+  const endHold = early => {
+    if (!holdTimer) return;
+    clearTimeout(holdTimer); holdTimer = null;
+    hold.dataset.holding = 'false';
+    try { navigator.vibrate && navigator.vibrate(0); } catch(err){}
+    if (early) hint.textContent = 'Let go too soon. Hold until it fills.';
+  };
+  const startHold = e => {
+    if (e && e.button > 0) return;            // mouse: left button only
+    if (e && e.preventDefault) e.preventDefault();
+    if (holdTimer) return;
+    hold.dataset.holding = 'true'; hint.textContent = 'Keep holding…';
+    if (fxPrefs.vibe) { try { navigator.vibrate && navigator.vibrate(COLLAPSE_HOLD_MS_PRESS); } catch(err){} }
+    holdTimer = setTimeout(() => {
+      holdTimer = null; hold.dataset.holding = 'false'; modal.dataset.open = 'false';
+      collapseBank();
+    }, COLLAPSE_HOLD_MS_PRESS);
+  };
+  const openCollapse = () => { hint.textContent = 'Press and hold to collapse'; modal.dataset.open = 'true'; hold.focus(); };
+  const closeCollapse = () => { endHold(false); modal.dataset.open = 'false'; };
+  $('collapseBtn').onclick = openCollapse;
+  $('collapseCancel').onclick = closeCollapse;
+  modal.addEventListener('click', e => { if (e.target === modal) closeCollapse(); });
+  hold.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => hold.addEventListener(t, () => endHold(true)));
+  hold.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu
+  hold.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) startHold(e); });
+  hold.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') endHold(true); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.dataset.open === 'true') closeCollapse(); });
   document.querySelectorAll('#lookList .look').forEach(b => b.onclick = () => applyLook(b.dataset.look));
   document.querySelector('meta[name="theme-color"]').setAttribute('content', LOOK_BG[currentLook()] || LOOK_BG.a);
 
