@@ -428,7 +428,7 @@ h2.section{margin-top:14px}
     </div>
     <div class="stack start-actions">
       <button class="btn" data-tone="primary" id="continueBtn" hidden>Continue Game<small id="continueSub"></small></button>
-      <button class="btn" id="newGameBtn">New Game<small id="newGameSub">Keeps players and deed stickers</small></button>
+      <button class="btn" id="newGameBtn">New Game<small id="newGameSub">Keeps deed stickers</small></button>
     </div>
   </section>
 
@@ -1206,7 +1206,7 @@ function renderStart(){
     (nt ? nt + (nt === 1 ? ' transaction' : ' transactions') : 'bank open');
   // Only one primary button: Continue when there's a game, New Game otherwise.
   if (saved) $('newGameBtn').removeAttribute('data-tone'); else $('newGameBtn').dataset.tone = 'primary';
-  $('newGameSub').textContent = np ? 'Keeps players and deed stickers' : 'Enroll player cards to begin';
+  $('newGameSub').textContent = np ? 'Clears players and the game · keeps deed stickers' : 'Enroll player cards to begin';
 }
 
 function renderAll(){
@@ -1590,11 +1590,12 @@ function boot(){
     await startScanning();
     resetToIdle();
   };
+  // New Game clears players and the game. Deed stickers are system setup and stay.
   $('newGameBtn').onclick = () => {
-    const had = hasSavedGame();
-    if (had && !confirm('Start a new game?\n\nThe game in progress ends and everyone goes back to $1,500. Players and deed stickers are kept.')) return;
-    state.ledger = []; state.open = false; invalidate(); save();
-    if (had) toast('New game. Everyone is back to $1,500.');
+    const had = hasSavedGame() || state.players.length > 0;
+    if (had && !confirm('Start a new game?\n\nThis clears every player and the game in progress. Registered deed stickers are kept.')) return;
+    state.players = []; state.ledger = []; state.open = false; invalidate(); save();
+    if (had) toast('New game. Enroll the players.');
     show('setup');
   };
   $('continueBtn').onclick = async () => {

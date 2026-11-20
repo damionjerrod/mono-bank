@@ -153,8 +153,11 @@ function makeDom(){
   await click('section[data-view="setup"] [data-back="start"]'); assert.equal(view(), 'start');
   await click('#newGameBtn'); assert.equal(view(), 'setup');
   assert.equal(ev('state.ledger.length'), 0);
-  assert.equal(ev('state.players.length + Object.keys(state.deeds).length'), 31);
-  assert.equal(bal('Ann'), 1500);
+  assert.equal(ev('state.players.length'), 0, 'new game clears players');
+  assert.equal(ev('Object.keys(state.deeds).length'), 28, 'new game keeps deed stickers');
+  assert.equal(ev('state.open'), false);
+  assert.equal(ev('JSON.parse(localStorage.getItem("monopoly-bank")).players.length'), 0);
+  assert.equal(ev('hasSavedGame()'), false, 'nothing to continue');
 
   assert.deepEqual(errs, []);
   console.log('ALL PASS');

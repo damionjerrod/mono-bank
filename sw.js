@@ -1,5 +1,5 @@
 // Offline support for the bank terminal.
-const CACHE = 'bank-v7';
+const CACHE = 'bank-v8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
