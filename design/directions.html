@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bank Look Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--page:#E9E9EC;--pagetext:#222}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#111;--pagetext:#ddd}}
+:root[data-theme="dark"]{--page:#111;--pagetext:#ddd}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--pagetext);font-family:Inter,system-ui,sans-serif;padding:24px 16px 48px}
+header{max-width:1180px;margin:0 auto 24px}
+header h1{margin:0 0 6px;font-size:22px}
+header p{margin:0;opacity:.7;font-size:14px;max-width:70ch}
+.row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+figcaption{text-align:center;max-width:340px}
+figcaption b{display:block;font-size:17px;margin-bottom:2px}
+figcaption span{font-size:13px;opacity:.7}
+
+/* ---------- phone shell shared by all three ---------- */
+.phone{width:340px;max-width:calc(100vw - 32px);border-radius:34px;overflow:hidden;
+  background:var(--bg);color:var(--text);font-family:var(--font);
+  box-shadow:0 20px 50px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:8px;padding:18px 20px 10px}
+.brand{flex:1;font-weight:700;font-size:15px;letter-spacing:-.01em}
+.pill{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  background:var(--surface);padding:6px 10px;border-radius:999px;color:var(--muted)}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--pos)}
+.body{padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.hero{border-radius:24px;padding:22px 20px;background:var(--hero);color:var(--heroText)}
+.hero .who{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.hero .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;background:var(--avbg)}
+.hero .lbl{font-size:12.5px;opacity:.75;margin-top:18px;font-weight:500}
+.hero .amt{font-size:46px;font-weight:700;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.05}
+.primary{border:none;border-radius:18px;padding:17px;font:inherit;font-weight:700;font-size:16px;
+  background:var(--accent);color:var(--onAccent);display:flex;justify-content:space-between;align-items:center}
+.primary small{font-weight:500;opacity:.8;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:none;border-radius:18px;padding:14px;text-align:left;font:inherit;background:var(--surface);color:var(--text);
+  display:flex;flex-direction:column;gap:10px;min-height:96px}
+.tile .ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--icbg);color:var(--icfg);font-size:16px;font-weight:700}
+.tile b{font-size:15px;font-weight:600}
+.tile small{display:block;font-size:12px;color:var(--muted);margin-top:1px;font-weight:400}
+.wide{grid-column:1/-1;flex-direction:row;align-items:center;min-height:0}
+.list{background:var(--surface);border-radius:18px;overflow:hidden}
+.list div{display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:14.5px}
+.list div+div{border-top:1px solid var(--hair)}
+.list .c{width:10px;height:10px;border-radius:50%}
+.list span{flex:1;font-weight:500}
+.list em{font-style:normal;font-weight:600;font-variant-numeric:tabular-nums}
+.list em.neg{color:var(--neg)}
+.tabs{display:flex;justify-content:space-around;padding:10px 12px 18px;border-top:1px solid var(--hair);font-size:12px;font-weight:600;color:var(--muted)}
+.tabs .on{color:var(--text)}
+.tabs .on::before{content:"";display:block;width:18px;height:3px;border-radius:2px;background:var(--accent);margin:0 auto 6px}
+.tabs span::before{content:"";display:block;width:18px;height:3px;margin:0 auto 6px}
+.swatch{display:flex;gap:6px}
+.swatch i{width:22px;height:22px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.25)}
+
+/* ---------- A: Midnight ---------- */
+.a{--font:Inter,system-ui,sans-serif;--bg:#0B0C0F;--surface:#17191E;--hair:#24272E;--text:#F4F5F7;--muted:#8B909A;
+  --hero:linear-gradient(140deg,#1F6F4E 0%,#14402F 100%);--heroText:#fff;--avbg:rgba(255,255,255,.15);
+  --accent:#3DDC97;--onAccent:#06140D;--icbg:#22252C;--icfg:#3DDC97;--pos:#3DDC97;--neg:#FF6B6B}
+/* ---------- B: Daylight ---------- */
+.b{--font:'Plus Jakarta Sans',system-ui,sans-serif;--bg:#F6F5F1;--surface:#FFFFFF;--hair:#ECEAE4;--text:#16171A;--muted:#75777D;
+  --hero:#16171A;--heroText:#fff;--avbg:#E2382E;
+  --accent:#E2382E;--onAccent:#fff;--icbg:#FCE9E7;--icfg:#E2382E;--pos:#1FA463;--neg:#E2382E}
+.b .tile{box-shadow:0 1px 2px rgba(0,0,0,.05)}
+/* ---------- C: Indigo Night ---------- */
+.c{--font:'Space Grotesk',system-ui,sans-serif;--bg:#101226;--surface:#1A1D3A;--hair:#272B52;--text:#EEF0FF;--muted:#9097C7;
+  --hero:linear-gradient(135deg,#6C5CE7 0%,#3B82F6 100%);--heroText:#fff;--avbg:rgba(255,255,255,.2);
+  --accent:#FFC94D;--onAccent:#1A1400;--icbg:#252A55;--icfg:#FFC94D;--pos:#4ADE80;--neg:#FB7185}
+</style>
+</head>
+<body>
+<header>
+  <h1>Three directions for the bank</h1>
+  <p>The same Player screen in each style. They differ in colour, typeface and how the buttons are drawn; the screen flow stays the same. Mix and match is fine, e.g. "B's layout with A's colours".</p>
+</header>
+<div class="row">
+
+<!-- A -->
+<figure>
+<div class="phone a">
+  <div class="top"><div class="brand">Bank</div><div class="pill"><i></i>Scanning</div></div>
+  <div class="body">
+    <div class="hero">
+      <div class="who"><div class="av">🎩</div>Damion</div>
+      <div class="lbl">Available balance</div>
+      <div class="amt">$1,340</div>
+    </div>
+    <button class="primary">Pass GO <small>+$200</small></button>
+    <div class="grid">
+      <button class="tile wide"><div class="ic">⌂</div><div><b>Pay rent</b><small>Tap the deed they landed on</small></div></button>
+      <button class="tile"><div class="ic">↓</div><div><b>Collect</b><small>From the bank</small></div></button>
+      <button class="tile"><div class="ic">↑</div><div><b>Pay bank</b><small>Tax, fees, fines</small></div></button>
+      <button class="tile"><div class="ic">⇄</div><div><b>Pay player</b><small>Deals, fines</small></div></button>
+      <button class="tile"><div class="ic">＋</div><div><b>Buy</b><small>Price fills in</small></div></button>
+    </div>
+    <div class="list">
+      <div><i class="c" style="background:#F2A33A"></i><span>Sam</span><em>$1,610</em></div>
+      <div><i class="c" style="background:#5B8DEF"></i><span>Riley</span><em class="neg">−$40</em></div>
+    </div>
+  </div>
+  <div class="tabs"><span>Players</span><span class="on">Bank</span><span>Ledger</span></div>
+</div>
+<figcaption><b>A · Midnight</b><span>Near-black with one bright mint green for money. Inter typeface. Calm, like a modern banking app.</span>
+<div class="swatch" style="justify-content:center;margin-top:8px"><i style="background:#0B0C0F"></i><i style="background:#17191E"></i><i style="background:#1F6F4E"></i><i style="background:#3DDC97"></i><i style="background:#FF6B6B"></i></div></figcaption>
+</figure>
+
+<!-- B -->
+<figure>
+<div class="phone b">
+  <div class="top"><div class="brand">Bank</div><div class="pill"><i></i>Scanning</div></div>
+  <div class="body">
+    <div class="hero">
+      <div class="who"><div class="av">🎩</div>Damion</div>
+      <div class="lbl">Available balance</div>
+      <div class="amt">$1,340</div>
+    </div>
+    <button class="primary">Pass GO <small>+$200</small></button>
+    <div class="grid">
+      <button class="tile wide"><div class="ic">⌂</div><div><b>Pay rent</b><small>Tap the deed they landed on</small></div></button>
+      <button class="tile"><div class="ic">↓</div><div><b>Collect</b><small>From the bank</small></div></button>
+      <button class="tile"><div class="ic">↑</div><div><b>Pay bank</b><small>Tax, fees, fines</small></div></button>
+      <button class="tile"><div class="ic">⇄</div><div><b>Pay player</b><small>Deals, fines</small></div></button>
+      <button class="tile"><div class="ic">＋</div><div><b>Buy</b><small>Price fills in</small></div></button>
+    </div>
+    <div class="list">
+      <div><i class="c" style="background:#F2A33A"></i><span>Sam</span><em>$1,610</em></div>
+      <div><i class="c" style="background:#5B8DEF"></i><span>Riley</span><em class="neg">−$40</em></div>
+    </div>
+  </div>
+  <div class="tabs"><span>Players</span><span class="on">Bank</span><span>Ledger</span></div>
+</div>
+<figcaption><b>B · Daylight</b><span>Warm off-white with a classic board-game red. Plus Jakarta Sans. Easiest to read across a bright table.</span>
+<div class="swatch" style="justify-content:center;margin-top:8px"><i style="background:#F6F5F1"></i><i style="background:#FFFFFF"></i><i style="background:#16171A"></i><i style="background:#E2382E"></i><i style="background:#1FA463"></i></div></figcaption>
+</figure>
+
+<!-- C -->
+<figure>
+<div class="phone c">
+  <div class="top"><div class="brand">Bank</div><div class="pill"><i></i>Scanning</div></div>
+  <div class="body">
+    <div class="hero">
+      <div class="who"><div class="av">🎩</div>Damion</div>
+      <div class="lbl">Available balance</div>
+      <div class="amt">$1,340</div>
+    </div>
+    <button class="primary">Pass GO <small>+$200</small></button>
+    <div class="grid">
+      <button class="tile wide"><div class="ic">⌂</div><div><b>Pay rent</b><small>Tap the deed they landed on</small></div></button>
+      <button class="tile"><div class="ic">↓</div><div><b>Collect</b><small>From the bank</small></div></button>
+      <button class="tile"><div class="ic">↑</div><div><b>Pay bank</b><small>Tax, fees, fines</small></div></button>
+      <button class="tile"><div class="ic">⇄</div><div><b>Pay player</b><small>Deals, fines</small></div></button>
+      <button class="tile"><div class="ic">＋</div><div><b>Buy</b><small>Price fills in</small></div></button>
+    </div>
+    <div class="list">
+      <div><i class="c" style="background:#F2A33A"></i><span>Sam</span><em>$1,610</em></div>
+      <div><i class="c" style="background:#5B8DEF"></i><span>Riley</span><em class="neg">−$40</em></div>
+    </div>
+  </div>
+  <div class="tabs"><span>Players</span><span class="on">Bank</span><span>Ledger</span></div>
+</div>
+<figcaption><b>C · Indigo Night</b><span>Deep indigo, a violet-to-blue balance card and gold buttons. Space Grotesk. More playful, game-night energy.</span>
+<div class="swatch" style="justify-content:center;margin-top:8px"><i style="background:#101226"></i><i style="background:#1A1D3A"></i><i style="background:#6C5CE7"></i><i style="background:#FFC94D"></i><i style="background:#FB7185"></i></div></figcaption>
+</figure>
+
+</div>
+</body>
+</html>
