@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v3` -> `bank-v4`...) whenever you change shipped files, so installed copies update.
+  (`bank-v4` -> `bank-v5`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -20,7 +20,8 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 
 ## How the code is laid out (index.html)
 - Views are `<section class="view" data-view="...">`: setup (Players tab), name (naming a new card),
-  deedsetup, idle (Bank tab), player, deed, amount, dice, choose, property, ledger, standings.
+  deedsetup, idle (Bank tab), player, deed, amount, dice, choose, property, ledger, standings,
+  settings (Settings tab).
   `show(name)` switches views.
 - `state` holds players, deeds, ledger. **Everything else is derived from the ledger** (`W()`):
   balances, owners, houses, mortgages. `post(from, to, amount, note, fx)` adds a ledger entry.
@@ -34,8 +35,13 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   New game (keeps players and deeds), Bank Collapse (wipes everything; confirm + type COLLAPSE).
 
 ## Look and feel
-Palette is a teller cage: dark green-black lacquer (`--ink #0E1A14`), brass, cream ledger paper.
-Fonts: Josefin Sans and IBM Plex Mono from Google Fonts (cached for offline by `sw.js`).
+Three looks over one modern layout (rounded cards, a balance "hero" card, icon tiles), picked in the
+Settings tab: **A · Midnight** (near-black, mint; the default), **B · Daylight** (warm white, red),
+**C · Indigo Night** (indigo, violet, gold). Each look is only a set of CSS variables on
+`:root[data-look="a|b|c"]` (`--bg`, `--surface`, `--text`, `--muted`, `--accent`, `--pos`, `--neg`,
+`--hero`...); style new things with those variables, never hard-coded colours. The choice is stored
+per phone under `localStorage['monopoly-bank-look']`, separate from the saved game.
+Fonts: Inter, Plus Jakarta Sans, Space Grotesk from Google Fonts (cached for offline by `sw.js`).
 It's used one-handed on a phone at a game table: big tap targets, readable from across the table.
 
 ## Tests
