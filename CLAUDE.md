@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v14` -> `bank-v15`...) whenever you change shipped files, so installed copies update.
+  (`bank-v15` -> `bank-v16`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -37,7 +37,10 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   if there are players or a game), and a Settings button.
 - There is no tab bar. The Bank screen is the hub: four action buttons, then rows (`data-go`) for
   Players, Deeds, Ledger, Standings and Settings, then Bank Collapse (wipes everything after a
-  confirm + typing COLLAPSE, then returns to the Start screen), and a Main Menu text button. Every other screen has its own Back button.
+  confirm + typing COLLAPSE, then returns to the Start screen). Every other screen has its own Back button.
+- Top bar (all screens but Start): back arrow (`#topBack`, `goBack()`), "Bank Terminal" centred, scan
+  status on the right. The arrow goes to Start from the Bank screen; elsewhere it presses that screen's
+  own Back / Cancel / Done button (`BACK_BUTTON`).
 - Players screen: the player list with balances (tap a card or name for the player screen) and a
   Manage Players button, which opens the setup screen.
 - Manage Players (setup): Enroll Players, Open the Bank (always green, `data-tone="go"` / `--go`),
