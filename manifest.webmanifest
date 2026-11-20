@@ -1,6 +1,6 @@
 {
   "name": "Bank Terminal",
-  "short_name": "Bank",
+  "short_name": "Bank Terminal",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
