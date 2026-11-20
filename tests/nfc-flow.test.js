@@ -146,6 +146,17 @@ function makeDom(){
   await click('#continueBtn'); assert.equal(view(), 'idle');
   assert.equal(ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})'), snap);
 
+  // Bank tab actions: pick the action first, then the player by card
+  await click('footer button[data-nav="idle"]'); assert.equal(view(), 'idle');
+  const annB = bal('Ann');
+  await click('[data-bank="passgo"]'); assert.equal(view(), 'choose');
+  await tap('A1'); assert.equal(bal('Ann'), annB + 200); assert.equal(view(), 'idle');
+  await click('[data-bank="buy"]'); await tap('B2'); assert.equal(view(), 'property');
+  await click('#prCancel'); assert.equal(view(), 'idle', 'cancel goes back to the Bank tab');
+  await click('[data-bank="pay"]'); await tap('C3'); assert.equal(view(), 'amount');
+  await click('#amtCancel'); assert.equal(view(), 'idle');
+  await tap('A1'); assert.equal(view(), 'player', 'a card tap still opens the player');
+  await click('section[data-view="player"] [data-back="idle"]');
   await click('footer button[data-nav="ledger"]'); await click('#standingsBtn'); assert.equal(view(), 'standings');
   console.log([...d.querySelectorAll('#standList li')].map(li => li.textContent).join('\n'));
   await click('#ledgerSegBtn'); assert.equal(view(), 'ledger');

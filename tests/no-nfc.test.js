@@ -17,6 +17,13 @@ const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.
   assert.equal(ev('Object.keys(state.deeds).length'), 3);
   await click('#dsDone'); assert.equal(ev('current'), 'setup');
   await click('#openBankBtn'); assert.equal(ev('current'), 'idle');
+  await click('[data-bank="collect"]'); await click(byText('#chList li', 'Ben'));
+  assert.equal(ev('current'), 'amount');
+  await click(byText('#keypad button', '7')); await click('#amtConfirm');
+  assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1507);
+  assert.equal(ev('current'), 'idle');
+  await click('#undoBtn'); assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1500);
+  await click('footer button[data-nav="idle"]');
   await click(byText('#idleRoster li', 'Ann')); assert.equal(ev('current'), 'player');
   await click('[data-act="buy"]'); await click(byText('#propList button', 'Boardwalk')); await click('#amtConfirm');
   await click(byText('#idleRoster li', 'Ben')); await click('[data-act="payrent"]'); await click(byText('#propList button', 'Boardwalk'));

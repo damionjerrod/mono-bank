@@ -391,6 +391,12 @@ body[data-chrome="off"] footer{display:none}
 .start-actions button.btn small{font-size:13.5px}
 h2.section{margin-top:14px}
 
+/* Bank tab: the four everyday actions */
+.bank-actions button.tile{min-height:132px;justify-content:space-between}
+.bank-actions button.tile b{font-size:17px}
+button.tile[data-tone="primary"]{text-align:left}
+button.tile[data-tone="primary"] .ic{background:rgba(0,0,0,.14);color:inherit}
+
 /* Ledger / Standings switch */
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
 .seg button{border:none;background:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;
@@ -492,10 +498,14 @@ h2.section{margin-top:14px}
 
   <!-- ═══ IDLE / SCANNING ═══ -->
   <section class="view" data-view="idle">
-    <button class="tap-target" id="tapTarget">
-      <div class="tap-rings"><i></i><i></i><i></i></div>
-      <div class="tap-core"><span>Tap card<br>or deed</span></div>
-    </button>
+    <div class="grid2 bank-actions">
+      <button class="btn tile" data-tone="primary" data-bank="passgo"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span><span><b>Pass GO</b><small>Collect $200</small></span></button>
+      <button class="btn tile" data-bank="buy"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><span><b>Buy Property</b><small>Price fills in</small></span></button>
+      <button class="btn tile" data-bank="collect"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg></span><span><b>Collect</b><small>From the bank</small></span></button>
+      <button class="btn tile" data-bank="pay"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20V9"/><path d="M7 14l5-5 5 5"/><path d="M5 4h14"/></svg></span><span><b>Pay Bank</b><small>Tax, fees, fines</small></span></button>
+    </div>
+    <h2 class="section">Players</h2>
+    <p class="hint">Tap a player's card, or pick them, for rent, trades and deeds.</p>
     <ul class="roster" id="idleRoster"></ul>
   </section>
 
@@ -948,7 +958,7 @@ function setLamp(on, text){
    4. VIEWS
    ════════════════════════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
-const NAV_FOR = { start:null, enroll:'setup', idle:'idle', ledger:'ledger', setup:'setup', standings:'ledger', deedsetup:'setup', name:'setup', settings:'settings' };
+const NAV_FOR = { start:null, enroll:'setup', idle:'idle', player:'idle', deed:'idle', amount:'idle', dice:'idle', choose:'idle', property:'idle', ledger:'ledger', setup:'setup', standings:'ledger', deedsetup:'setup', name:'setup', settings:'settings' };
 let current = 'setup';
 let activePlayer = null;     // whose turn at the terminal
 let activeDeed = null;       // index of the deed on screen
@@ -973,10 +983,10 @@ function show(name, nav){
 }
 
 function resetToIdle(){
-  activePlayer = null; activeDeed = null;
+  activePlayer = null; activeDeed = null; fromBank = false;
   show('idle');
 }
-function openPlayer(p){ activePlayer = p; show('player'); }
+function openPlayer(p){ activePlayer = p; fromBank = false; show('player'); }
 function openDeed(i){ activeDeed = i; show('deed'); }
 
 // Pale token colours (yellow, cream) need dark text on top of them.
@@ -1319,7 +1329,25 @@ function askDice(hint, onRoll, onCancel){
 /* ════════════════════════════════════════════════════════════
    6. FLOWS
    ════════════════════════════════════════════════════════════ */
-const backToPlayer = () => show('player');
+// Flows started from the Bank tab's action buttons go back there on cancel, not to a player screen.
+let fromBank = false;
+const backToPlayer = () => fromBank ? resetToIdle() : show('player');
+
+const BANK_ACTIONS = {
+  passgo:  { title: 'Who Passed GO?',          run: () => {
+    post(BANK, activePlayer.id, 200, 'Passed GO');
+    toast(activePlayer.name + ' collected $200');
+    resetToIdle();
+  } },
+  buy:     { title: 'Who\'s Buying?',          run: () => buyFlow() },
+  collect: { title: 'Who\'s Collecting?',      run: () => collectFlow() },
+  pay:     { title: 'Who\'s Paying the Bank?', run: () => payBankFlow() }
+};
+function bankAction(key){
+  const a = BANK_ACTIONS[key];
+  choosePlayer({ title: a.title, hint: 'Tap their card, or pick them below.', onCancel: resetToIdle,
+    onPick: id => { activePlayer = findPlayer(id); fromBank = true; a.run(); } });
+}
 const backToDeed = () => show('deed');
 
 function payBankFlow(){
@@ -1630,10 +1658,7 @@ function boot(){
   document.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACTS[b.dataset.act]());
 
   // tap targets: on a phone they (re)start scanning; elsewhere they stand in for a tap
-  $('tapTarget').onclick = () => {
-    if (!nfcSupported) { toast('No NFC here. Pick a player from the list.'); return; }
-    if (!scanning) startScanning(); else toast('Hold a card or deed to the back of the phone');
-  };
+  document.querySelectorAll('[data-bank]').forEach(b => b.onclick = () => bankAction(b.dataset.bank));
   $('chTarget').onclick = () => {
     if (nfcSupported && !scanning) startScanning();
     else toast(nfcSupported ? 'Hold the card to the phone' : 'No NFC here. Pick from the list.');

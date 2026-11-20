@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v9` -> `bank-v10`...) whenever you change shipped files, so installed copies update.
+  (`bank-v10` -> `bank-v11`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -39,6 +39,11 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   Enroll Players opens the enroll screen (tap rings, who's enrolled so far, Done; a No NFC notice
   only on browsers without NFC); naming a card returns there so cards can be enrolled one after
   another. Deed stickers are only in Settings.
+- Bank tab (idle): four action buttons, Pass GO, Buy Property, Collect, Pay Bank (`data-bank`,
+  `BANK_ACTIONS`, `bankAction()`). Each asks "who?" via `choosePlayer` (tap a card or pick), then
+  runs the flow; cancelling goes back to the Bank tab (`fromBank`). Below, the player list with
+  balances; tapping a card or a name opens the player screen (rent, pay a player, deeds). Tapping a
+  deed sticker opens the deed.
 - Ledger tab: a Ledger / Standings switch at the top flips between the two views.
 - Settings tab: Theme (three looks), Setup (Register Deed Stickers), Game (Main Menu,
   Bank Collapse, which wipes everything after a confirm + typing COLLAPSE).
