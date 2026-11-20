@@ -111,10 +111,10 @@ function makeDom(){
 
   await clickText('#dActions button', 'Hand Over');
   await tap('B2'); assert.equal(ev('deedState(20).owner'), 'B2');
-  await click('footer button[data-nav="ledger"]'); await click('#undoBtn');
+  await click('[data-go="ledger"]'); await click('#undoBtn');
   assert.equal(ev('deedState(20).owner'), 'A1');
   // bankrupt: hand Boardwalk back to bank
-  await click('footer button[data-nav="idle"]');
+  await click('section[data-view="ledger"] [data-back="idle"]');
   await tap('D21'); await clickText('#dActions button', 'Hand Over'); await clickText('#chList li', 'The bank');
   assert.equal(ev('deedState(21).owner'), null);
 
@@ -147,7 +147,7 @@ function makeDom(){
   assert.equal(ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})'), snap);
 
   // Bank tab actions: pick the action first, then the player by card
-  await click('footer button[data-nav="idle"]'); assert.equal(view(), 'idle');
+  await click('section[data-view="ledger"] [data-back="idle"]'); assert.equal(view(), 'idle');
   const annB = bal('Ann');
   await click('[data-bank="passgo"]'); assert.equal(view(), 'choose');
   await tap('A1'); assert.equal(bal('Ann'), annB + 200); assert.equal(view(), 'idle');
@@ -157,11 +157,20 @@ function makeDom(){
   await click('#amtCancel'); assert.equal(view(), 'idle');
   await tap('A1'); assert.equal(view(), 'player', 'a card tap still opens the player');
   await click('section[data-view="player"] [data-back="idle"]');
-  await click('footer button[data-nav="ledger"]'); await click('#standingsBtn'); assert.equal(view(), 'standings');
+  await click('[data-go="ledger"]'); await click('#standingsBtn'); assert.equal(view(), 'standings');
   console.log([...d.querySelectorAll('#standList li')].map(li => li.textContent).join('\n'));
   await click('#ledgerSegBtn'); assert.equal(view(), 'ledger');
-  await click('footer button[data-nav="setup"]');
-  await click('section[data-view="setup"] [data-back="start"]'); assert.equal(view(), 'start');
+  await click('section[data-view="standings"] [data-back="idle"]'); assert.equal(view(), 'idle');
+  await click('[data-go="players"]'); assert.equal(view(), 'players');
+  assert.match(text('#playersRoster'), /Ann[\s\S]*Ben[\s\S]*Cal/);
+  await tap('B2'); assert.equal(view(), 'player', 'card tap on Players opens the player');
+  await click('section[data-view="player"] [data-back="idle"]');
+  await click('[data-go="players"]'); await click('#managePlayersBtn'); assert.equal(view(), 'setup');
+  assert.equal(d.querySelector('#setupBack').hidden, false, 'mid-game: Back to Players');
+  await click('#setupBack'); assert.equal(view(), 'players');
+  await click('[data-go="settings"]'); assert.equal(view(), 'settings');
+  await click('#settingsBack'); assert.equal(view(), 'idle');
+  await click('#managePlayersBtn'); await click('#setupMenu'); assert.equal(view(), 'start');
   await click('#newGameBtn'); assert.equal(view(), 'setup');
   assert.equal(ev('state.ledger.length'), 0);
   assert.equal(ev('state.players.length'), 0, 'new game clears players');

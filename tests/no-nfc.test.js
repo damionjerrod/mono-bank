@@ -23,13 +23,13 @@ const byText = (sel, t) => [...d.querySelectorAll(sel)].find(e => e.textContent.
   assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1507);
   assert.equal(ev('current'), 'idle');
   await click('#undoBtn'); assert.equal(ev("balanceOf(state.players.find(p=>p.name==='Ben').id)"), 1500);
-  await click('footer button[data-nav="idle"]');
-  await click(byText('#idleRoster li', 'Ann')); assert.equal(ev('current'), 'player');
+  await click('section[data-view="ledger"] [data-back="idle"]');
+  await click('[data-go="players"]'); await click(byText('#playersRoster li', 'Ann')); assert.equal(ev('current'), 'player');
   await click('[data-act="buy"]'); await click(byText('#propList button', 'Boardwalk')); await click('#amtConfirm');
-  await click(byText('#idleRoster li', 'Ben')); await click('[data-act="payrent"]'); await click(byText('#propList button', 'Boardwalk'));
+  await click('[data-go="players"]'); await click(byText('#playersRoster li', 'Ben')); await click('[data-act="payrent"]'); await click(byText('#propList button', 'Boardwalk'));
   assert.equal(d.querySelector('#amtDisplay').textContent, '$50'); await click('#amtConfirm');
   assert.equal(ev("balanceOf(state.players[1].id)"), 1450);
-  await click('footer button[data-nav="deeds"]'); await click(byText('#propList button', 'Boardwalk'));
+  await click('[data-go="deeds"]'); await click(byText('#propList button', 'Boardwalk'));
   await click(byText('#dActions button', 'Charge Rent')); await click(byText('#chList li', 'Ben')); await click('#amtConfirm');
   assert.equal(ev("balanceOf(state.players[0].id)"), 1200);
   assert.deepEqual(errs, []); console.log('NO-NFC PASS');
