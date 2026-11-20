@@ -387,7 +387,7 @@ body[data-chrome="off"] footer{display:none}
 .logo{width:96px;height:96px;border-radius:28px;background:var(--hero);color:var(--hero-text);
   display:grid;place-items:center;font-size:52px;font-weight:700;box-shadow:0 14px 40px rgba(0,0,0,.25);margin-bottom:8px}
 .start-title{font-size:36px}
-.start-actions button.btn{padding:20px;font-size:18px}
+.start-actions button.btn{padding:20px;font-size:18px;text-align:center}
 .start-actions button.btn small{font-size:13.5px}
 h2.section{margin-top:14px}
 
@@ -428,7 +428,7 @@ h2.section{margin-top:14px}
     </div>
     <div class="stack start-actions">
       <button class="btn" data-tone="primary" id="continueBtn" hidden>Continue Game<small id="continueSub"></small></button>
-      <button class="btn" id="newGameBtn">New Game<small id="newGameSub">Keeps deed stickers</small></button>
+      <button class="btn" id="newGameBtn">Start a New Game<small id="newGameSub"></small></button>
     </div>
   </section>
 
@@ -1202,11 +1202,12 @@ function renderStart(){
   const saved = hasSavedGame();
   $('continueBtn').hidden = !saved;
   const np = state.players.length, nt = state.ledger.length;
-  $('continueSub').textContent = np + (np === 1 ? ' player' : ' players') + ' · ' +
-    (nt ? nt + (nt === 1 ? ' transaction' : ' transactions') : 'bank open');
+  // Start screen sub-labels are Title Case, unlike sub-labels elsewhere.
+  $('continueSub').textContent = np + (np === 1 ? ' Player' : ' Players') + ' · ' +
+    (nt ? nt + (nt === 1 ? ' Transaction' : ' Transactions') : 'Bank Open');
   // Only one primary button: Continue when there's a game, New Game otherwise.
   if (saved) $('newGameBtn').removeAttribute('data-tone'); else $('newGameBtn').dataset.tone = 'primary';
-  $('newGameSub').textContent = np ? 'Clears players and the game · keeps deed stickers' : 'Enroll player cards to begin';
+  $('newGameSub').textContent = np ? 'Clears Players and the Game' : 'Enroll Player Cards to Begin';
 }
 
 function renderAll(){

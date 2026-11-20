@@ -9,7 +9,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
 - **Web NFC only works in Chrome on Android over HTTPS.** Desktop browsers have no NFC; every tap
   step also has an on-screen list, and those lists must keep working (see `tests/no-nfc.test.js`).
 - **Offline.** `sw.js` caches the app (network first, cache fallback). Bump `CACHE` in `sw.js`
-  (`bank-v8` -> `bank-v9`...) whenever you change shipped files, so installed copies update.
+  (`bank-v9` -> `bank-v10`...) whenever you change shipped files, so installed copies update.
   New shipped files must be added to `SHELL` in `sw.js`.
 - **The bank never writes to tags.** A tag's factory serial number is its identity. Player cards may
   carry one NDEF text record written by the owner in NFC Tools, `token:<name>` (lowercase, dashes),
@@ -32,7 +32,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   what a tap means. `tokenFromMessage`, `tokenLabel`, `displayName`, `TOKEN_ICONS` handle tokens.
 - Rules implemented: colour-set rent doubling, houses/hotels with even building and a 32/12 limit,
   railroads by count, utilities 4x/10x the dice, mortgages with 10% interest.
-- Start screen: Continue Game (only if `state.open` or the ledger has entries), New Game (clears
+- Start screen: Continue Game (only if `state.open` or the ledger has entries), Start a New Game (clears
   players, ledger and `open`; keeps registered deed stickers, which are system setup; confirms first
   if there are players or a game), and a Settings button.
 - Players tab: Enroll Players, Open the Bank (always green, `data-tone="go"` / `--go`), Main Menu.
@@ -44,7 +44,7 @@ on it; each of the 28 deeds has an NFC sticker. Deadline that matters: family ga
   Bank Collapse, which wipes everything after a confirm + typing COLLAPSE).
 - The tab bar only shows once the bank is open; before that, screens have their own back buttons.
 - Headings, button labels and screen titles are Title Case; hints, sub-labels, toasts and ledger
-  notes stay sentence case.
+  notes stay sentence case. Exception: the Start screen buttons' sub-labels are Title Case too.
 
 ## Look and feel
 Three looks over one modern layout (rounded cards, a balance "hero" card, icon tiles), picked in the
