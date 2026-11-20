@@ -10,7 +10,7 @@ const click = async sel => { d.querySelector(sel).click(); await tick(); };
 (async () => {
   for (const n of ['Ann','Ben']) { await click('#enrollBtn'); d.querySelector('#nameInput').value = n; await click('#saveNameBtn'); }
   await click('#deedSetupBtn'); for (let i=0;i<3;i++) await click('#dsTarget');
-  await click('section[data-view="deedsetup"] [data-back="setup"]');
+  await click('#dsDone');
   await click('#collapseBtn');
   assert.equal(ev('state.players.length'), 2, 'wrong word must not wipe');
   typed = 'collapse';

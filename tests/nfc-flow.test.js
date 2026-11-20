@@ -24,6 +24,9 @@ function makeDom(){
   const view = () => ev('current');
   const houses = i => ev(`deedState(${i}).houses`);
 
+  assert.equal(view(), 'start');
+  assert.equal(d.querySelector('#continueBtn').hidden, true, 'no saved game: no Continue');
+  await click('#newGameBtn'); assert.equal(view(), 'setup');
   await click('#enrollBtn');
   for (const [s,n] of [['A1','Ann'],['B2','Ben'],['C3','Cal']]) {
     await tap(s); assert.equal(view(), 'name');
@@ -55,17 +58,17 @@ function makeDom(){
   assert.equal(bal('Ann'), 950);
 
   await tap('D21'); assert.equal(view(), 'deed'); assert.match(text('#dRent'), /\$100 rent/);
-  await clickText('#dActions button', 'Charge rent');
+  await clickText('#dActions button', 'Charge Rent');
   await tap('A1'); assert.equal(view(), 'choose');
   await tap('B2'); assert.equal(view(), 'amount'); assert.equal(text('#amtDisplay'), '$100');
   await click('#amtConfirm'); assert.equal(bal('Ben'), 1400); assert.equal(bal('Ann'), 1050);
 
   await tap('D21');
-  await clickText('#dActions button', 'Add house');
-  await clickText('#dActions button', 'Add house');
+  await clickText('#dActions button', 'Add House');
+  await clickText('#dActions button', 'Add House');
   assert.equal(houses(21), 1);
-  await tap('D20'); await clickText('#dActions button', 'Add house');
-  await tap('D21'); await clickText('#dActions button', 'Add house');
+  await tap('D20'); await clickText('#dActions button', 'Add House');
+  await tap('D21'); await clickText('#dActions button', 'Add House');
   assert.equal(houses(21), 2); assert.equal(bal('Ann'), 450);
 
   await click('section[data-view="deed"] [data-back="idle"]');
@@ -84,13 +87,13 @@ function makeDom(){
 
   await tap('D20'); await clickText('#dActions button', 'Mortgage');
   assert.equal(ev('deedState(20).mortgaged'), false); // buildings in set: refused
-  await tap('D21'); await clickText('#dActions button', 'Sell house'); assert.equal(houses(21), 1);
-  await clickText('#dActions button', 'Sell house'); assert.equal(houses(21), 0);
-  await clickText('#dActions button', 'Add house'); await clickText('#dActions button', 'Add house'); assert.equal(houses(21), 2);
-  await clickText('#dActions button', 'Add house'); assert.equal(houses(21), 2); // uneven: refused
-  await tap('D20'); await clickText('#dActions button', 'Sell house'); assert.equal(houses(20), 1); // uneven sell: refused
-  await tap('D21'); await clickText('#dActions button', 'Sell house'); await clickText('#dActions button', 'Sell house');
-  await tap('D20'); await clickText('#dActions button', 'Sell house');
+  await tap('D21'); await clickText('#dActions button', 'Sell House'); assert.equal(houses(21), 1);
+  await clickText('#dActions button', 'Sell House'); assert.equal(houses(21), 0);
+  await clickText('#dActions button', 'Add House'); await clickText('#dActions button', 'Add House'); assert.equal(houses(21), 2);
+  await clickText('#dActions button', 'Add House'); assert.equal(houses(21), 2); // uneven: refused
+  await tap('D20'); await clickText('#dActions button', 'Sell House'); assert.equal(houses(20), 1); // uneven sell: refused
+  await tap('D21'); await clickText('#dActions button', 'Sell House'); await clickText('#dActions button', 'Sell House');
+  await tap('D20'); await clickText('#dActions button', 'Sell House');
   assert.equal(houses(21) + houses(20), 0);
   await tap('D20'); await clickText('#dActions button', 'Mortgage');
   assert.equal(ev('deedState(20).mortgaged'), true);
@@ -101,19 +104,19 @@ function makeDom(){
   await click('#prCancel'); assert.equal(view(), 'player');
   await tap('D20'); assert.equal(view(), 'deed'); // any tap jumps to it
   await click('section[data-view="player"] [data-back="idle"]');
-  await tap('D20'); await clickText('#dActions button', 'Lift mortgage');
+  await tap('D20'); await clickText('#dActions button', 'Lift Mortgage');
   assert.equal(bal('Ann'), annBefore - 193);
 
-  await clickText('#dActions button', 'Hand over');
+  await clickText('#dActions button', 'Hand Over');
   await tap('B2'); assert.equal(ev('deedState(20).owner'), 'B2');
   await click('footer button[data-nav="ledger"]'); await click('#undoBtn');
   assert.equal(ev('deedState(20).owner'), 'A1');
   // bankrupt: hand Boardwalk back to bank
   await click('footer button[data-nav="idle"]');
-  await tap('D21'); await clickText('#dActions button', 'Hand over'); await clickText('#chList li', 'The bank');
+  await tap('D21'); await clickText('#dActions button', 'Hand Over'); await clickText('#chList li', 'The bank');
   assert.equal(ev('deedState(21).owner'), null);
 
-  await tap('B2'); await click('[data-act="pay"]'); await clickText('#presetRow button', 'Income tax');
+  await tap('B2'); await click('[data-act="pay"]'); await clickText('#presetRow button', 'Income Tax');
   await click('#amtConfirm');
   assert.equal(ev('state.ledger.at(-1).note'), 'Income tax');
   const benB = bal('Ben');
@@ -127,7 +130,7 @@ function makeDom(){
   // hotels: give Cal all browns cheaply, build to hotel
   await click('#prCancel'); await click('section[data-view="player"] [data-back="idle"]');
   for (const s of ['D0','D1']) { await tap('C3'); await click('[data-act="buy"]'); await tap(s); await click('#amtConfirm'); }
-  for (let k=0;k<5;k++) for (const s of ['D0','D1']) { await tap(s); await clickText('#dActions button', k===4?'Build hotel':'Add house'); }
+  for (let k=0;k<5;k++) for (const s of ['D0','D1']) { await tap(s); await clickText('#dActions button', k===4?'Build Hotel':'Add House'); }
   assert.equal(houses(0)+houses(1), 10);
   await tap('B2'); await click('[data-act="payrent"]'); await tap('D1');
   assert.equal(text('#amtDisplay'), '$450');
@@ -136,12 +139,16 @@ function makeDom(){
   // reload survives
   const snap = ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})');
   dom = makeDom(); w = dom.window; d = w.document; await tick();
-  assert.equal(view(), 'idle');
+  assert.equal(view(), 'start');
+  assert.equal(d.querySelector('#continueBtn').hidden, false, 'saved game: Continue shown');
+  await click('#continueBtn'); assert.equal(view(), 'idle');
   assert.equal(ev('JSON.stringify({b:state.players.map(p=>balanceOf(p.id)), o:W().props})'), snap);
 
   await click('footer button[data-nav="setup"]'); await click('#standingsBtn');
   console.log([...d.querySelectorAll('#standList li')].map(li => li.textContent).join('\n'));
-  await click('section[data-view="standings"] [data-back="setup"]'); await click('#newGameBtn');
+  await click('section[data-view="standings"] [data-back="setup"]');
+  await click('section[data-view="setup"] [data-back="start"]'); assert.equal(view(), 'start');
+  await click('#newGameBtn'); assert.equal(view(), 'setup');
   assert.equal(ev('state.ledger.length'), 0);
   assert.equal(ev('state.players.length + Object.keys(state.deeds).length'), 31);
   assert.equal(bal('Ann'), 1500);
