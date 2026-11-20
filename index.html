@@ -1945,6 +1945,16 @@ function boot(){
   const modal = $('collapseModal'), hold = $('collapseHold'), hint = $('collapseHint');
   hold.style.setProperty('--hold-ms', COLLAPSE_HOLD_MS_PRESS + 'ms');
   let holdTimer = null;
+  // One long vibration request is not reliable on Android (it can be cut short or dropped), so while
+  // the button is held a short buzz is renewed every HOLD_BUZZ_EVERY_MS, overlapping the last one.
+  let buzzLoop = null;
+  const HOLD_BUZZ_MS = 400, HOLD_BUZZ_EVERY_MS = 300;
+  const holdBuzz = () => { try { navigator.vibrate && navigator.vibrate(HOLD_BUZZ_MS); } catch(err){} };
+  const startBuzz = () => { if (!fxPrefs.vibe) return; holdBuzz(); buzzLoop = setInterval(holdBuzz, HOLD_BUZZ_EVERY_MS); };
+  const stopBuzz = () => {
+    if (buzzLoop) { clearInterval(buzzLoop); buzzLoop = null; }
+    try { navigator.vibrate && navigator.vibrate(0); } catch(err){}
+  };
   const collapseBank = () => {
     // Everyone's money drains to $0.00 on screen; the game itself is wiped straight away.
     const rows = state.players.map(p => ({ name: p.name, from: balanceOf(p.id), to: 0 }));
@@ -1959,7 +1969,7 @@ function boot(){
     if (!holdTimer) return;
     clearTimeout(holdTimer); holdTimer = null;
     hold.dataset.holding = 'false';
-    try { navigator.vibrate && navigator.vibrate(0); } catch(err){}
+    stopBuzz();
     if (early) hint.textContent = 'Let go too soon. Hold until it fills.';
   };
   const startHold = e => {
@@ -1967,9 +1977,10 @@ function boot(){
     if (e && e.preventDefault) e.preventDefault();
     if (holdTimer) return;
     hold.dataset.holding = 'true'; hint.textContent = 'Keep holding…';
-    if (fxPrefs.vibe) { try { navigator.vibrate && navigator.vibrate(COLLAPSE_HOLD_MS_PRESS); } catch(err){} }
+    startBuzz();
     holdTimer = setTimeout(() => {
       holdTimer = null; hold.dataset.holding = 'false'; modal.dataset.open = 'false';
+      stopBuzz();                             // hand over to the collapse rumble
       collapseBank();
     }, COLLAPSE_HOLD_MS_PRESS);
   };

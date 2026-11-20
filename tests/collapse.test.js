@@ -23,11 +23,17 @@ const open = () => d.querySelector('#collapseModal').dataset.open;
   // a short press does nothing
   await fire('#collapseHold', 'pointerdown');
   assert.equal(d.querySelector('#collapseHold').dataset.holding, 'true', 'fill starts');
-  assert.equal(w.__vib.at(-1), HOLD, 'long vibration while holding');
-  await wait(HOLD / 3); await fire('#collapseHold', 'pointerup');
+  assert.equal(w.__vib.at(-1), 400, 'vibration starts on press');
+  const n0 = w.__vib.length;
+  await wait(HOLD / 3);
+  assert(w.__vib.length - n0 >= 1, 'vibration keeps being renewed while held');
+  assert(w.__vib.slice(n0).every(v => v === 400), 'only buzz renewals while held');
+  await fire('#collapseHold', 'pointerup');
   assert.equal(d.querySelector('#collapseHold').dataset.holding, 'false', 'fill drains when let go');
   assert.equal(w.__vib.at(-1), 0, 'vibration stops when let go');
+  const n1 = w.__vib.length;
   await wait(HOLD); assert.equal(ev('state.players.length'), 2, 'letting go early must not wipe');
+  assert.equal(w.__vib.length, n1, 'no more buzzing after letting go');
   assert.match(d.querySelector('#collapseHint').textContent, /too soon/);
   // cancel closes it, nothing wiped
   await click('#collapseCancel'); assert.equal(open(), 'false'); assert.equal(ev('state.players.length'), 2);
