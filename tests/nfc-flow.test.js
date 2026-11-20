@@ -155,6 +155,8 @@ function makeDom(){
   await click('#prCancel'); assert.equal(view(), 'idle', 'cancel goes back to the Bank tab');
   await click('[data-bank="pay"]'); await tap('C3'); assert.equal(view(), 'amount');
   await click('#amtCancel'); assert.equal(view(), 'idle');
+  await click('section[data-view="idle"] [data-back="start"]'); assert.equal(view(), 'start');
+  await click('#continueBtn'); assert.equal(view(), 'idle');
   await tap('A1'); assert.equal(view(), 'player', 'a card tap still opens the player');
   await click('section[data-view="player"] [data-back="idle"]');
   await click('[data-go="standings"]'); assert.equal(view(), 'standings');
